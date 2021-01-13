@@ -6,7 +6,7 @@ import argparse
 import os
 
 from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
-from pose_graph_tracking.helpers.human36m_definitions import CocoColors, H36MPairs
+from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, CONNECTED_JOINTS_PAIRS
 
 _img_size = (1000, 1000, 3)
 _delta_t_ms = 100 # 100ms = 10Hz (original playback speed)
@@ -67,8 +67,8 @@ class PoseGraphVisualizer(object):
         window = None
 
         num_joints = 17
-        pairs = H36MPairs
-        colors = CocoColors
+        pairs = CONNECTED_JOINTS_PAIRS
+        colors = COCO_COLORS
         colors[1] = colors[17]
         colors[2] = colors[18]
         colors[3] = colors[19]
