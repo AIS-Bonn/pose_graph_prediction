@@ -1,0 +1,7 @@
+{
+  "filename": "data/keypoints_s1_h36m.json",
+  "subject_id": 1,
+  "sequence_id": 0,
+  "camera_id": 0,
+  "speedup_factor": 5
+}

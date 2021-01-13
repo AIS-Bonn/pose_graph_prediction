@@ -1,2 +1,3 @@
-# sample-data-repo
+# Pose Graph Tracking
 
+Tracking humans represented by pose graphs.
