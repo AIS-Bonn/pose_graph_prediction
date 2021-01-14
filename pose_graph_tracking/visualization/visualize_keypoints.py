@@ -1,20 +1,26 @@
 import numpy as np
 import matplotlib.pyplot as plt
+
+import mpl_toolkits.mplot3d.axes3d as p3
+import matplotlib.animation as animation
+
 import cv2
 import json
 import argparse
 import os
 
+from math import sin
+
 from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
-from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, CONNECTED_JOINTS_PAIRS
+from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS #  , CONNECTED_JOINTS_PAIRS
 
 _img_size = (1000, 1000, 3)
-_delta_t_ms = 100 # 100ms = 10Hz (original playback speed)
+_delta_t_ms = 100  # 100ms = 10Hz (original playback speed)
+
 
 class PoseGraphVisualizer(object):
     def __init__(self):
         self.visualizer_confidence_threshold = 0.3
-
 
         args = self.parse_arguments()
         print("args ", args)
@@ -64,63 +70,91 @@ class PoseGraphVisualizer(object):
         window_name = 'sequence {}, camera {}: {}'.format(self.config["sequence_id"],
                                                           self.config["camera_id"],
                                                           self.action_label)
-        window = None
 
-        num_joints = 17
-        pairs = CONNECTED_JOINTS_PAIRS
+        # pairs = CONNECTED_JOINTS_PAIRS
         colors = COCO_COLORS
         colors[1] = colors[17]
         colors[2] = colors[18]
         colors[3] = colors[19]
         colors[4] = colors[20]
 
-        for idx, frame in enumerate(self.keypoint_sequence):
-            if frame['poses_2d'] is None:
+        # print("self.keypoint_sequence \n", self.keypoint_sequence)
+
+        CONNECTED_JOINTS_PAIRS = [(8, 9), (9, 10), (10, 11), (8, 12), (12, 13), (13, 14), (8, 20), (1, 20), (0, 1), (0, 19),
+                        (1, 2), (2, 3), (3, 4), (1, 5), (5, 6), (6, 7)]
+
+        fig = plt.figure()
+        fig.canvas.set_window_title(window_name)
+        ax = p3.Axes3D(fig)
+
+        number_keypoints = len(CONNECTED_JOINTS_PAIRS)
+        lines = [ax.plot([], [], [])[0] for _ in range(number_keypoints)]
+        for line_id, line in enumerate(lines):
+            line_color = np.array(COCO_COLORS[line_id]) / 255.
+            line.set_color(line_color)
+
+        sequence_length = len(self.keypoint_sequence)
+
+        min_keypoint_values = [float("inf")] * 3
+        max_keypoint_values = [-float("inf")] * 3
+        # Get min and max values per axis for sequence
+        for frame in self.keypoint_sequence:
+            if frame['poses_3d_triang'] is None:
                 print('missing frame t={}!'.format(frame['time_idx']))
                 continue
 
-            print('image: {}\r'.format(frame['time_idx']), end='')
-            kps = frame['poses_2d'][self.config["camera_id"]]  # key points are [x, y, conf]
+            current_minimum = np.minimum.reduce(frame['poses_3d_triang'])
+            min_keypoint_values = np.minimum(min_keypoint_values, current_minimum)
 
-            img = np.zeros(_img_size, dtype=np.uint8)
+            current_maximum = np.maximum.reduce(frame['poses_3d_triang'])
+            max_keypoint_values = np.maximum(max_keypoint_values, current_maximum)
 
-            centers = {}
-            body_parts = {}
+        # Setting the axes properties
+        ax.set_xlim3d([min_keypoint_values[0] / 1000.0, max_keypoint_values[0] / 1000.0])
+        ax.set_xlabel('X')
 
-            # draw point
-            for i in range(num_joints):
-                if kps[i][2] < self.visualizer_confidence_threshold:
-                    continue
+        ax.set_ylim3d([min_keypoint_values[1] / 1000.0, max_keypoint_values[1] / 1000.0])
+        ax.set_ylabel('Y')
 
-                body_part = kps[i]
-                center = (int(body_part[0] + 0.5), int(body_part[1] + 0.5))
+        ax.set_zlim3d([min_keypoint_values[2] / 1000.0, max_keypoint_values[2] / 1000.0])
+        ax.set_zlabel('Z')
 
-                centers[i] = center
-                body_parts[i] = body_part
-                img = cv2.circle(img, center, 6, colors[i], thickness=-1, lineType=8, shift=0)
+        ax.set_title('3D Test')
 
-            # draw line
-            for pair_order, pair in enumerate(pairs):
-                if pair[0] not in centers.keys() or pair[1] not in centers.keys():
-                    continue
+        def update_lines(i, sequence, lines):
+            print("Frame: ", i)
+            current_frame = sequence[i]
+            current_pose = current_frame["poses_3d_triang"]
+            if current_pose is None:
+                print('missing frame t={}!'.format(current_frame['time_idx']))
+                return lines
 
-                img = cv2.line(img, centers[pair[0]], centers[pair[1]], colors[pair[1]], 5)
+            for link_id, linked_joint_ids in enumerate(CONNECTED_JOINTS_PAIRS):
+                link_start_keypoint = current_pose[linked_joint_ids[0]]
+                link_end_keypoint = current_pose[linked_joint_ids[1]]
 
-            if window is None:
-                fig = plt.figure()
-                fig.canvas.set_window_title(window_name)
-                window = plt.imshow(img)
-            else:
-                window.set_data(img)
+                link_x_values = np.array([link_start_keypoint[0], link_end_keypoint[0]])
+                link_y_values = np.array([link_start_keypoint[1], link_end_keypoint[1]])
+                link_z_values = np.array([link_start_keypoint[2], link_end_keypoint[2]])
+                # Convert from millimeters to meters
+                link_x_values = link_x_values / 1000.0
+                link_y_values = link_y_values / 1000.0
+                link_z_values = link_z_values / 1000.0
+                data_array = np.array([link_x_values, link_y_values])
+                lines[link_id].set_data(data_array)
+                lines[link_id].set_3d_properties(link_z_values)
 
-            plt.pause(_delta_t_ms / 1000. / self.config["speedup_factor"])
-            plt.draw()
-            # cv2.imshow(window_name, img)
-            # cv2.waitKey(_delta_t_ms / self.config["speedup_factor"])
+            return lines
+
+        # Creating the Animation object
+        line_ani = animation.FuncAnimation(fig,
+                                           update_lines,
+                                           frames=sequence_length,
+                                           fargs=(self.keypoint_sequence, lines),
+                                           interval=_delta_t_ms,
+                                           blit=False)
 
         plt.show()
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
