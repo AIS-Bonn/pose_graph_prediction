@@ -143,12 +143,12 @@ class PoseGraphVisualizer(object):
             return lines
 
         # Creating the Animation object
-        line_ani = animation.FuncAnimation(fig,
-                                           update_lines,
-                                           frames=sequence_length,
-                                           fargs=(self.keypoint_sequence, lines),
-                                           blit=False)
+        _ = FuncAnimation(fig,
+                          update_lines,
+                          frames=sequence_length,
+                          fargs=(self.keypoint_sequence, lines),
                           interval=self.duration_between_frames_in_ms,
+                          blit=False)
 
         show_animation()
 
