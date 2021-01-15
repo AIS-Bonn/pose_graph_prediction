@@ -66,9 +66,9 @@ class PoseGraphVisualizer(object):
         print('Action type: {}'.format(self.action_label))
 
     def visualize(self):
-        window_name = 'sequence {}, camera {}: {}'.format(self.config["sequence_id"],
-                                                          self.config["camera_id"],
-                                                          self.action_label)
+        window_name = 'Keypoint Visualization: Sequence {}, Camera {} - Action: {}'.format(self.config["sequence_id"],
+                                                                                           self.config["camera_id"],
+                                                                                           self.action_label)
 
         # pairs = CONNECTED_JOINTS_PAIRS
         colors = COCO_COLORS
