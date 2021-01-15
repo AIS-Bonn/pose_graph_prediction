@@ -1,18 +1,17 @@
+from argparse import ArgumentParser
+
+from json import load as load_json_file
+
+from matplotlib.pyplot import figure, show as show_animation
+from matplotlib.animation import FuncAnimation
+
+from mpl_toolkits.mplot3d.axes3d import Axes3D
+
 import numpy as np
-import matplotlib.pyplot as plt
 
-import mpl_toolkits.mplot3d.axes3d as p3
-import matplotlib.animation as animation
-
-import cv2
-import json
-import argparse
-import os
-
-from math import sin
+from os.path import exists
 
 from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
-
 _img_size = (1000, 1000, 3)
 _delta_t_ms = 100  # 100ms = 10Hz (original playback speed)
 from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, CONNECTED_JOINTS_PAIRS
@@ -32,7 +31,7 @@ class PoseGraphVisualizer(object):
         self.load_poses()
 
     def parse_arguments(self):
-        parser = argparse.ArgumentParser()
+        parser = ArgumentParser()
         parser.add_argument('--config_file_path',
                             type=str,
                             default=PACKAGE_ROOT_PATH + "config/visualizer_config.json",
@@ -42,9 +41,9 @@ class PoseGraphVisualizer(object):
 
     def load_visualizer_config(self,
                                path_to_config_file):
-        if os.path.exists(path_to_config_file):
+        if exists(path_to_config_file):
             with open(path_to_config_file) as json_file:
-                self.config = json.load(json_file)
+                self.config = load_json_file(json_file)
         else:
             self.load_default_config()
 
@@ -58,7 +57,7 @@ class PoseGraphVisualizer(object):
 
     def load_poses(self):
         with open(PACKAGE_ROOT_PATH + self.config["filename"]) as json_file:
-            data = json.load(json_file)
+            data = load_json_file(json_file)
 
         self.keypoint_sequence = data['sequences'][self.config["sequence_id"]]
         self.action_label = data['action_labels'][self.config["sequence_id"]]
@@ -80,9 +79,9 @@ class PoseGraphVisualizer(object):
 
         # print("self.keypoint_sequence \n", self.keypoint_sequence)
 
-        fig = plt.figure()
+        fig = figure()
         fig.canvas.set_window_title(window_name)
-        ax = p3.Axes3D(fig)
+        ax = Axes3D(fig)
 
         number_keypoints = len(CONNECTED_JOINTS_PAIRS)
         lines = [ax.plot([], [], [])[0] for _ in range(number_keypoints)]
@@ -151,7 +150,7 @@ class PoseGraphVisualizer(object):
                                            interval=_delta_t_ms,
                                            blit=False)
 
-        plt.show()
+        show_animation()
 
 
 if __name__ == '__main__':
