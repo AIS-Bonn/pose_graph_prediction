@@ -115,7 +115,7 @@ class PoseGraphVisualizer(object):
         ax.set_zlim3d([min_keypoint_values[2] / 1000.0, max_keypoint_values[2] / 1000.0])
         ax.set_zlabel('Z')
 
-        ax.set_title('3D Test')
+        ax.set_title(window_name)
 
         def update_lines(i, sequence, lines):
             print("Frame: ", i)
