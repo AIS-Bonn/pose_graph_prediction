@@ -15,6 +15,34 @@ from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
 from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, CONNECTED_JOINTS_PAIRS
 
 
+def update_lines(i, sequence, lines):
+    print("Frame: ", i)
+    current_frame = sequence[i]
+    current_pose = current_frame["poses_3d_triang"]
+    if current_pose is None:
+        print('missing frame t={}!'.format(current_frame['time_idx']))
+        return lines
+
+    for link_id, linked_joint_ids in enumerate(CONNECTED_JOINTS_PAIRS):
+        link_start_keypoint = current_pose[linked_joint_ids[0]]
+        link_end_keypoint = current_pose[linked_joint_ids[1]]
+
+        # Restructure data to provide it to the line setters later on
+        link_x_values = np.array([link_start_keypoint[0], link_end_keypoint[0]])
+        link_y_values = np.array([link_start_keypoint[1], link_end_keypoint[1]])
+        link_z_values = np.array([link_start_keypoint[2], link_end_keypoint[2]])
+        # Convert from millimeters to meters
+        link_x_values = link_x_values / 1000.0
+        link_y_values = link_y_values / 1000.0
+        link_z_values = link_z_values / 1000.0
+
+        data_array = np.array([link_x_values, link_y_values])
+        lines[link_id].set_data(data_array)
+        lines[link_id].set_3d_properties(link_z_values)
+
+    return lines
+
+
 class PoseGraphVisualizer(object):
     def __init__(self):
         self.visualizer_confidence_threshold = 0.3
@@ -27,6 +55,9 @@ class PoseGraphVisualizer(object):
         self.keypoint_sequence = None
         self.action_label = None
         self.load_poses()
+
+        self.plot3d = None
+        self.lines = None
 
     def parse_arguments(self):
         parser = ArgumentParser()
@@ -64,32 +95,56 @@ class PoseGraphVisualizer(object):
         print('Action type: {}'.format(self.action_label))
 
     def visualize(self):
+        plot = figure()
+        plot.canvas.set_window_title("Pose Graph Visualization")
+        self.plot3d = Axes3D(plot)
+        self.set_plot_title()
+        self.create_lines()
+        self.set_axes_limits()
+
+        # Create the animation
+        sequence_length = len(self.keypoint_sequence)
+        _ = FuncAnimation(plot,
+                          update_lines,
+                          frames=sequence_length,
+                          fargs=(self.keypoint_sequence, self.lines),
+                          interval=self.duration_between_frames_in_ms,
+                          blit=False)
+        show_animation()
+
+    def set_plot_title(self):
         window_name = 'Keypoint Visualization: Sequence {}, Camera {} - Action: {}'.format(self.config["sequence_id"],
                                                                                            self.config["camera_id"],
                                                                                            self.action_label)
+        self.plot3d.set_title(window_name)
 
-        # pairs = CONNECTED_JOINTS_PAIRS
-        colors = COCO_COLORS
-        colors[1] = colors[17]
-        colors[2] = colors[18]
-        colors[3] = colors[19]
-        colors[4] = colors[20]
+    def create_lines(self):
+        number_of_lines = len(CONNECTED_JOINTS_PAIRS)
+        # Create a list of empty line objects within the plot3d - .plot returns a list of lines to be plotted, we use
+        #  the first for each joint pair to set a different color to each line
+        self.lines = [self.plot3d.plot([], [], [])[0] for _ in range(number_of_lines)]
+        self.set_line_colors()
 
-        fig = figure()
-        fig.canvas.set_window_title(window_name)
-        ax = Axes3D(fig)
-
-        number_keypoints = len(CONNECTED_JOINTS_PAIRS)
-        lines = [ax.plot([], [], [])[0] for _ in range(number_keypoints)]
-        for line_id, line in enumerate(lines):
+    def set_line_colors(self):
+        for line_id, line in enumerate(self.lines):
             line_color = np.array(COCO_COLORS[line_id]) / 255.
             line.set_color(line_color)
 
-        sequence_length = len(self.keypoint_sequence)
+    def set_axes_limits(self):
+        min_axes_limits, max_axes_limits = self.compute_axes_limits()
 
+        self.plot3d.set_xlim3d([min_axes_limits[0] / 1000.0, max_axes_limits[0] / 1000.0])
+        self.plot3d.set_xlabel('X')
+
+        self.plot3d.set_ylim3d([min_axes_limits[1] / 1000.0, max_axes_limits[1] / 1000.0])
+        self.plot3d.set_ylabel('Y')
+
+        self.plot3d.set_zlim3d([min_axes_limits[2] / 1000.0, max_axes_limits[2] / 1000.0])
+        self.plot3d.set_zlabel('Z')
+
+    def compute_axes_limits(self):
         min_keypoint_values = [float("inf")] * 3
         max_keypoint_values = [-float("inf")] * 3
-        # Get min and max values per axis for sequence
         for frame in self.keypoint_sequence:
             if frame['poses_3d_triang'] is None:
                 print('missing frame t={}!'.format(frame['time_idx']))
@@ -101,52 +156,7 @@ class PoseGraphVisualizer(object):
             current_maximum = np.maximum.reduce(frame['poses_3d_triang'])
             max_keypoint_values = np.maximum(max_keypoint_values, current_maximum)
 
-        # Setting the axes properties
-        ax.set_xlim3d([min_keypoint_values[0] / 1000.0, max_keypoint_values[0] / 1000.0])
-        ax.set_xlabel('X')
-
-        ax.set_ylim3d([min_keypoint_values[1] / 1000.0, max_keypoint_values[1] / 1000.0])
-        ax.set_ylabel('Y')
-
-        ax.set_zlim3d([min_keypoint_values[2] / 1000.0, max_keypoint_values[2] / 1000.0])
-        ax.set_zlabel('Z')
-
-        ax.set_title(window_name)
-
-        def update_lines(i, sequence, lines):
-            print("Frame: ", i)
-            current_frame = sequence[i]
-            current_pose = current_frame["poses_3d_triang"]
-            if current_pose is None:
-                print('missing frame t={}!'.format(current_frame['time_idx']))
-                return lines
-
-            for link_id, linked_joint_ids in enumerate(CONNECTED_JOINTS_PAIRS):
-                link_start_keypoint = current_pose[linked_joint_ids[0]]
-                link_end_keypoint = current_pose[linked_joint_ids[1]]
-
-                link_x_values = np.array([link_start_keypoint[0], link_end_keypoint[0]])
-                link_y_values = np.array([link_start_keypoint[1], link_end_keypoint[1]])
-                link_z_values = np.array([link_start_keypoint[2], link_end_keypoint[2]])
-                # Convert from millimeters to meters
-                link_x_values = link_x_values / 1000.0
-                link_y_values = link_y_values / 1000.0
-                link_z_values = link_z_values / 1000.0
-                data_array = np.array([link_x_values, link_y_values])
-                lines[link_id].set_data(data_array)
-                lines[link_id].set_3d_properties(link_z_values)
-
-            return lines
-
-        # Creating the Animation object
-        _ = FuncAnimation(fig,
-                          update_lines,
-                          frames=sequence_length,
-                          fargs=(self.keypoint_sequence, lines),
-                          interval=self.duration_between_frames_in_ms,
-                          blit=False)
-
-        show_animation()
+        return min_keypoint_values, max_keypoint_values
 
 
 if __name__ == '__main__':
