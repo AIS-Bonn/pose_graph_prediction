@@ -12,7 +12,6 @@ import numpy as np
 from os.path import exists
 
 from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
-_img_size = (1000, 1000, 3)
 from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, CONNECTED_JOINTS_PAIRS
 
 
@@ -22,7 +21,6 @@ class PoseGraphVisualizer(object):
         self.duration_between_frames_in_ms = 100  # 100ms = 10Hz (original playback speed)
 
         args = self.parse_arguments()
-        print("args ", args)
         self.config = None
         self.load_visualizer_config(args.config_file_path)
 
@@ -76,8 +74,6 @@ class PoseGraphVisualizer(object):
         colors[2] = colors[18]
         colors[3] = colors[19]
         colors[4] = colors[20]
-
-        # print("self.keypoint_sequence \n", self.keypoint_sequence)
 
         fig = figure()
         fig.canvas.set_window_title(window_name)
