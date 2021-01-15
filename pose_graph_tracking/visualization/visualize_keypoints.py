@@ -12,10 +12,10 @@ import os
 from math import sin
 
 from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
-from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS #  , CONNECTED_JOINTS_PAIRS
 
 _img_size = (1000, 1000, 3)
 _delta_t_ms = 100  # 100ms = 10Hz (original playback speed)
+from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, CONNECTED_JOINTS_PAIRS
 
 
 class PoseGraphVisualizer(object):
@@ -79,9 +79,6 @@ class PoseGraphVisualizer(object):
         colors[4] = colors[20]
 
         # print("self.keypoint_sequence \n", self.keypoint_sequence)
-
-        CONNECTED_JOINTS_PAIRS = [(8, 9), (9, 10), (10, 11), (8, 12), (12, 13), (13, 14), (8, 20), (1, 20), (0, 1), (0, 19),
-                        (1, 2), (2, 3), (3, 4), (1, 5), (5, 6), (6, 7)]
 
         fig = plt.figure()
         fig.canvas.set_window_title(window_name)
