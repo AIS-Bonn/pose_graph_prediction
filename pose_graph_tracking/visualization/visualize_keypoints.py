@@ -13,13 +13,13 @@ from os.path import exists
 
 from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
 _img_size = (1000, 1000, 3)
-_delta_t_ms = 100  # 100ms = 10Hz (original playback speed)
 from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, CONNECTED_JOINTS_PAIRS
 
 
 class PoseGraphVisualizer(object):
     def __init__(self):
         self.visualizer_confidence_threshold = 0.3
+        self.duration_between_frames_in_ms = 100  # 100ms = 10Hz (original playback speed)
 
         args = self.parse_arguments()
         print("args ", args)
@@ -147,8 +147,8 @@ class PoseGraphVisualizer(object):
                                            update_lines,
                                            frames=sequence_length,
                                            fargs=(self.keypoint_sequence, lines),
-                                           interval=_delta_t_ms,
                                            blit=False)
+                          interval=self.duration_between_frames_in_ms,
 
         show_animation()
 
