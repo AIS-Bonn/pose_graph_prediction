@@ -77,7 +77,7 @@ class PoseGraphVisualizer(object):
             self.load_default_config()
 
     def load_default_config(self):
-        self.config = {"filename": "data/keypoints_s1_h36m.json",
+        self.config = {"filename": "data/original/keypoints_s1_h36m.json",
                        "subject_id": 1,  # [1, 5, 6, 7, 8, 9, 11]
                        "sequence_id": 0,  # [0-29]
                        "camera_id": 0,  # [0-3]
