@@ -41,12 +41,10 @@ def update_lines_using_pose(lines: List[Line2D],
 
 
 def get_estimated_keypoints_from_sequence_frame(sequence_frame: dict) -> List[Tuple[float, float, float]]:
-    print("estimated")
     return sequence_frame["poses_3d_triang"]
 
 
 def get_ground_truth_keypoints_from_sequence_frame(sequence_frame: dict) -> List[Tuple[float, float, float]]:
-    print("ground truth ")
     return sequence_frame["labels"]["poses_3d"]
 
 
@@ -55,7 +53,6 @@ def update_lines_using_keypoints_sequence(frame_id: int,
                                           pose_sequence: List[dict],
                                           get_pose_from_sequence_frame_function: Callable[[dict], List[Tuple[float, float, float]]],
                                           connected_joint_pairs: List[Tuple[int, int]]) -> List[Line2D]:
-    print("Frame: ", frame_id)
     current_frame = pose_sequence[frame_id]
     current_pose = get_pose_from_sequence_frame_function(current_frame)
     if current_pose is None:
