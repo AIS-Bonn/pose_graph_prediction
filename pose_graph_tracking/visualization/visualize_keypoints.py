@@ -12,20 +12,15 @@ import numpy as np
 from os.path import exists
 
 from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
-from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, CONNECTED_JOINTS_PAIRS
+from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, \
+    CONNECTED_JOINTS_PAIRS_FOR_ESTIMATION, CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
 
-def update_lines(i, sequence, lines):
-    print("Frame: ", i)
-    current_frame = sequence[i]
-    current_pose = current_frame["poses_3d_triang"]
-    if current_pose is None:
-        print('missing frame t={}!'.format(current_frame['time_idx']))
-        return lines
 
-    for link_id, linked_joint_ids in enumerate(CONNECTED_JOINTS_PAIRS):
-        link_start_keypoint = current_pose[linked_joint_ids[0]]
-        link_end_keypoint = current_pose[linked_joint_ids[1]]
+def update_lines_using_pose(lines, pose, connected_joint_pairs):
+    for link_id, linked_joint_ids in enumerate(connected_joint_pairs):
+        link_start_keypoint = pose[linked_joint_ids[0]]
+        link_end_keypoint = pose[linked_joint_ids[1]]
 
         # Restructure data to provide it to the line setters later on
         link_x_values = np.array([link_start_keypoint[0], link_end_keypoint[0]])
@@ -40,11 +35,44 @@ def update_lines(i, sequence, lines):
         lines[link_id].set_data(data_array)
         lines[link_id].set_3d_properties(link_z_values)
 
+
+def get_estimated_keypoints_from_sequence_frame(sequence_frame):
+    print("estimated")
+    return sequence_frame["poses_3d_triang"]
+
+
+def get_ground_truth_keypoints_from_sequence_frame(sequence_frame):
+    print("ground truth ")
+    return sequence_frame["labels"]["poses_3d"]
+
+
+def update_lines_using_keypoints_sequence(frame_id,
+                                          lines,
+                                          pose_sequence,
+                                          get_pose_from_sequence_frame_function,
+                                          connected_joint_pairs):
+    print("Frame: ", frame_id)
+    current_frame = pose_sequence[frame_id]
+    current_pose = get_pose_from_sequence_frame_function(current_frame)
+    if current_pose is None:
+        print('missing frame t={}!'.format(current_frame['time_idx']))
+        return lines
+
+    update_lines_using_pose(lines,
+                            current_pose,
+                            connected_joint_pairs)
+
     return lines
 
 
 class PoseGraphVisualizer(object):
     def __init__(self):
+        self.visualize_estimated_keypoints = False
+        if self.visualize_estimated_keypoints:
+            self.connected_joint_pairs = CONNECTED_JOINTS_PAIRS_FOR_ESTIMATION
+        else:
+            self.connected_joint_pairs = CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
+
         self.visualizer_confidence_threshold = 0.3
         self.duration_between_frames_in_ms = 100  # 100ms = 10Hz (original playback speed)
 
@@ -104,12 +132,27 @@ class PoseGraphVisualizer(object):
 
         # Create the animation
         sequence_length = len(self.keypoint_sequence)
-        _ = FuncAnimation(plot,
-                          update_lines,
-                          frames=sequence_length,
-                          fargs=(self.keypoint_sequence, self.lines),
-                          interval=self.duration_between_frames_in_ms,
-                          blit=False)
+        if self.visualize_estimated_keypoints:
+            _ = FuncAnimation(plot,
+                              update_lines_using_keypoints_sequence,
+                              frames=sequence_length,
+                              fargs=(self.lines,
+                                     self.keypoint_sequence,
+                                     get_estimated_keypoints_from_sequence_frame,
+                                     self.connected_joint_pairs),
+                              interval=self.duration_between_frames_in_ms,
+                              blit=False)
+        else:  # visualize ground truth keypoints - currently they have a different format
+            _ = FuncAnimation(plot,
+                              update_lines_using_keypoints_sequence,
+                              frames=sequence_length,
+                              fargs=(self.lines,
+                                     self.keypoint_sequence,
+                                     get_ground_truth_keypoints_from_sequence_frame,
+                                     self.connected_joint_pairs),
+                              interval=self.duration_between_frames_in_ms,
+                              blit=False)
+
         show_animation()
 
     def set_plot_title(self):
@@ -119,7 +162,7 @@ class PoseGraphVisualizer(object):
         self.plot3d.set_title(window_name)
 
     def create_lines(self):
-        number_of_lines = len(CONNECTED_JOINTS_PAIRS)
+        number_of_lines = len(self.connected_joint_pairs)
         # Create a list of empty line objects within the plot3d - .plot returns a list of lines to be plotted, we use
         #  the first for each joint pair to set a different color to each line
         self.lines = [self.plot3d.plot([], [], [])[0] for _ in range(number_of_lines)]
