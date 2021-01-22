@@ -23,24 +23,28 @@ COCO_COLORS = [(255, 0, 0),
                (255, 0, 85),
                (242, 165, 65)]
 
-# BODY PARTS
+# JOINT_IDS_FOR_ESTIMATION_DATA
 # Nose = 0,
-# Head = 1, ###  not in COCO model
-# Neck = 2,
-# Belly = 3, ### not in COCO model
-# Root = 4,
+# Neck = 1,
+# RShoulder = 2,
+# RElbow = 3,
+# RWrist = 4,
 # LShoulder = 5,
-# RShoulder = 6,
-# LElbow = 7,
-# RElbow = 8,
-# LWrist = 9,
-# RWrist = 10,
-# LHip = 11,
-# RHip = 12,
+# LElbow = 6,
+# LWrist = 7,
+# MidHip = 8,  Corresponds to Root in Human36M joints
+# RHip = 9,
+# RKnee = 10,
+# RAnkle = 11,
+# LHip = 12,
 # LKnee = 13,
-# RKnee = 14,
-# LAnkle = 15,
-# RAnkle = 16;
+# LAnkle = 14,
+# REye = 15,
+# LEye = 16,
+# REar = 17,
+# LEar = 18,
+# Head = 19,
+# Belly = 20,
 
 CONNECTED_JOINTS_PAIRS_FOR_ESTIMATION = [(8, 9),
                                          (9, 10),
@@ -58,6 +62,25 @@ CONNECTED_JOINTS_PAIRS_FOR_ESTIMATION = [(8, 9),
                                          (1, 5),
                                          (5, 6),
                                          (6, 7)]
+
+# JOINT_IDS_FOR_HUMAN36M_GROUND_TRUTH_DATA
+# Root = 0  Corresponds to MidHip in estimated joints
+# RHip = 1
+# RKnee = 2
+# RAnkle = 3
+# LHip = 4
+# LKnee = 5
+# LAnkle = 6
+# Belly = 7
+# Neck = 8
+# Nose = 9
+# Head = 10
+# LShoulder = 11
+# LElbow = 12
+# LWrist = 13
+# RShoulder = 14
+# RElbow = 15
+# RWrist = 16
 
 CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH = [(0, 1),
                                                     (1, 2),
