@@ -88,6 +88,8 @@ class PoseGraphVisualizer(object):
         self.plot3d = None
         self.lines = None
 
+        self.print_infos_about_visualization()
+
     def parse_arguments(self) -> Any:
         parser = ArgumentParser()
         parser.add_argument('--config_file_path',
@@ -120,7 +122,13 @@ class PoseGraphVisualizer(object):
         self.keypoint_sequence = data['sequences'][self.config["sequence_id"]]
         self.action_label = data['action_labels'][self.config["sequence_id"]]
 
-        print('Playing back sequence {}, camera {}'.format(self.config["sequence_id"], self.config["camera_id"]))
+    def print_infos_about_visualization(self):
+        if self.visualize_estimated_keypoints:
+            print('Visualizing estimated keypoints')
+        else:
+            print('Visualizing ground truth keypoints')
+        print('Subject: {}'.format(self.config["subject_id"]))
+        print('Sequence: {}'.format(self.config["sequence_id"]))
         print('Action type: {}'.format(self.action_label))
 
     def visualize(self):
