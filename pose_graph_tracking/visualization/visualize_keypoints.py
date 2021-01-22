@@ -4,6 +4,7 @@ from json import load as load_json_file
 
 from matplotlib.pyplot import figure, show as show_animation
 from matplotlib.animation import FuncAnimation
+from matplotlib.lines import Line2D
 
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 
@@ -15,9 +16,12 @@ from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
 from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, \
     CONNECTED_JOINTS_PAIRS_FOR_ESTIMATION, CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
+from typing import Any, Callable, List, Tuple
 
 
-def update_lines_using_pose(lines, pose, connected_joint_pairs):
+def update_lines_using_pose(lines: List[Line2D],
+                            pose: List[Tuple[float, float, float]],
+                            connected_joint_pairs: List[Tuple[int, int]]):
     for link_id, linked_joint_ids in enumerate(connected_joint_pairs):
         link_start_keypoint = pose[linked_joint_ids[0]]
         link_end_keypoint = pose[linked_joint_ids[1]]
@@ -36,21 +40,21 @@ def update_lines_using_pose(lines, pose, connected_joint_pairs):
         lines[link_id].set_3d_properties(link_z_values)
 
 
-def get_estimated_keypoints_from_sequence_frame(sequence_frame):
+def get_estimated_keypoints_from_sequence_frame(sequence_frame: dict) -> List[Tuple[float, float, float]]:
     print("estimated")
     return sequence_frame["poses_3d_triang"]
 
 
-def get_ground_truth_keypoints_from_sequence_frame(sequence_frame):
+def get_ground_truth_keypoints_from_sequence_frame(sequence_frame: dict) -> List[Tuple[float, float, float]]:
     print("ground truth ")
     return sequence_frame["labels"]["poses_3d"]
 
 
-def update_lines_using_keypoints_sequence(frame_id,
-                                          lines,
-                                          pose_sequence,
-                                          get_pose_from_sequence_frame_function,
-                                          connected_joint_pairs):
+def update_lines_using_keypoints_sequence(frame_id: int,
+                                          lines: List[Line2D],
+                                          pose_sequence: List[dict],
+                                          get_pose_from_sequence_frame_function: Callable[[dict], List[Tuple[float, float, float]]],
+                                          connected_joint_pairs: List[Tuple[int, int]]) -> List[Line2D]:
     print("Frame: ", frame_id)
     current_frame = pose_sequence[frame_id]
     current_pose = get_pose_from_sequence_frame_function(current_frame)
@@ -87,7 +91,7 @@ class PoseGraphVisualizer(object):
         self.plot3d = None
         self.lines = None
 
-    def parse_arguments(self):
+    def parse_arguments(self) -> Any:
         parser = ArgumentParser()
         parser.add_argument('--config_file_path',
                             type=str,
@@ -97,7 +101,7 @@ class PoseGraphVisualizer(object):
         return args
 
     def load_visualizer_config(self,
-                               path_to_config_file):
+                               path_to_config_file: str):
         if exists(path_to_config_file):
             with open(path_to_config_file) as json_file:
                 self.config = load_json_file(json_file)
@@ -185,7 +189,7 @@ class PoseGraphVisualizer(object):
         self.plot3d.set_zlim3d([min_axes_limits[2] / 1000.0, max_axes_limits[2] / 1000.0])
         self.plot3d.set_zlabel('Z')
 
-    def compute_axes_limits(self):
+    def compute_axes_limits(self) -> Tuple[List[float], List[float]]:
         min_keypoint_values = [float("inf")] * 3
         max_keypoint_values = [-float("inf")] * 3
         for frame in self.keypoint_sequence:
