@@ -2,6 +2,8 @@ from argparse import ArgumentParser
 
 from json import load as load_json_file
 
+from math import atan2, cos, sin, pi
+
 from matplotlib.pyplot import figure, show as show_animation
 from matplotlib.animation import FuncAnimation
 from matplotlib.lines import Line2D
@@ -18,6 +20,18 @@ from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, \
 
 from typing import Any, List, Tuple
 
+
+def get_angle(vector_a_2d, vector_b_2d):
+    angle = atan2(vector_b_2d[1], vector_b_2d[0]) - atan2(vector_a_2d[1], vector_a_2d[0])
+    while angle < 0.0:
+        angle += 2 * pi
+    return angle
+
+
+def get_rotation_matrix_around_z_axis(angle):
+    return np.array([[cos(angle), -sin(angle), 0],
+                     [sin(angle),  cos(angle), 0],
+                     [         0,           0, 1]])
 
 
 def update_lines_using_pose(lines: List[Line2D],
@@ -105,6 +119,8 @@ class PoseGraphVisualizer(object):
 
         sequence = data['sequences'][self.config["sequence_id"]]
         self.extract_keypoints_from_sequence(sequence)
+        self.normalize_keypoints()
+
         self.action_label = data['action_labels'][self.config["sequence_id"]]
 
     def extract_keypoints_from_sequence(self,
@@ -129,6 +145,33 @@ class PoseGraphVisualizer(object):
         for gt_joint_id, estimation_joint_id in JOINT_MAPPING_FROM_GT_TO_ESTIMATION:
             converted_keypoints.append(keypoints[estimation_joint_id])
         return converted_keypoints
+
+    def normalize_keypoints(self):
+        """
+        We normalize the keypoint sequence by transforming it into a local coordinate system.
+        This system is centered at the mid hip position of the first frame.
+        The z axis points into the opposite direction of the gravitational force.
+        The y axis points into the direction from the mid hip point to the left hip point.
+        The x axis is directed accordingly, roughly into the direction the front of the hip is pointing to.
+        """
+        if len(self.keypoint_sequence) == 0:
+            print("Sequence does not contain any poses.")
+            exit(-1)
+
+        first_mid_hip_position = np.array(self.keypoint_sequence[0][0])
+        first_left_hip_position = np.array(self.keypoint_sequence[0][4])
+
+        mid_hip_position_xy = np.array(first_mid_hip_position[0:2])
+        left_hip_position_xy = np.array(first_left_hip_position[0:2])
+        vector_mid_to_left_hip_xy = left_hip_position_xy - mid_hip_position_xy
+        y_axis_vector_xy = np.array([0.0, 1.0])
+        angle_from_left_hip_to_y_axis = get_angle(vector_mid_to_left_hip_xy, y_axis_vector_xy)
+        rotation_matrix_around_z_axis = get_rotation_matrix_around_z_axis(angle_from_left_hip_to_y_axis)
+
+        for frame_id, current_pose in enumerate(self.keypoint_sequence):
+            pose_centered_at_mid_hip = np.array(current_pose) - first_mid_hip_position
+            normalized_pose = np.matmul(rotation_matrix_around_z_axis, pose_centered_at_mid_hip.transpose()).transpose()
+            self.keypoint_sequence[frame_id] = normalized_pose
 
     def print_infos_about_visualization(self):
         if self.visualize_estimated_keypoints:
