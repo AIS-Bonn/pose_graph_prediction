@@ -55,10 +55,10 @@ def update_lines_using_pose(lines: List[Line2D],
         lines[link_id].set_3d_properties(link_z_values)
 
 
-def update_lines_using_keypoints_sequence(frame_id: int,
-                                          lines: List[Line2D],
-                                          pose_sequence: List[List[Tuple[float, float, float]]],
-                                          connected_joint_pairs: List[Tuple[int, int]]) -> List[Line2D]:
+def update_lines_using_pose_sequence(frame_id: int,
+                                     lines: List[Line2D],
+                                     pose_sequence: List[List[Tuple[float, float, float]]],
+                                     connected_joint_pairs: List[Tuple[int, int]]) -> List[Line2D]:
     current_pose = pose_sequence[frame_id]
     update_lines_using_pose(lines,
                             current_pose,
@@ -69,7 +69,7 @@ def update_lines_using_keypoints_sequence(frame_id: int,
 
 class PoseGraphVisualizer(object):
     def __init__(self):
-        self.visualize_estimated_keypoints = True
+        self.visualize_estimated_poses = True
         self.connected_joint_pairs = CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
         self.visualizer_confidence_threshold = 0.3
@@ -79,7 +79,7 @@ class PoseGraphVisualizer(object):
         self.config = None
         self.load_visualizer_config(args.config_file_path)
 
-        self.keypoint_sequence = None
+        self.pose_sequence = None
         self.action_label = None
         self.load_poses()
 
@@ -118,48 +118,48 @@ class PoseGraphVisualizer(object):
             data = load_json_file(json_file)
 
         sequence = data['sequences'][self.config["sequence_id"]]
-        self.extract_keypoints_from_sequence(sequence)
-        self.normalize_keypoints()
+        self.extract_poses_from_sequence(sequence)
+        self.normalize_poses()
 
         self.action_label = data['action_labels'][self.config["sequence_id"]]
 
-    def extract_keypoints_from_sequence(self,
-                                        sequence):
-        if self.visualize_estimated_keypoints:
-            self.keypoint_sequence = [frame["poses_3d_filter"] for frame in sequence
-                                      if frame["poses_3d_filter"] is not None]
-            number_of_missing_frames = len(sequence) - len(self.keypoint_sequence)
+    def extract_poses_from_sequence(self,
+                                    sequence):
+        if self.visualize_estimated_poses:
+            self.pose_sequence = [frame["poses_3d_filter"] for frame in sequence
+                                  if frame["poses_3d_filter"] is not None]
+            number_of_missing_frames = len(sequence) - len(self.pose_sequence)
             if number_of_missing_frames > 0:
                 print('{} estimated frames are missing/None!'.format(number_of_missing_frames))
-            self.convert_estimated_keypoints_sequence_to_gt_format()
+            self.convert_estimated_pose_sequence_to_gt_format()
         else:
-            self.keypoint_sequence = [frame["labels"]["poses_3d"] for frame in sequence]
+            self.pose_sequence = [frame["labels"]["poses_3d"] for frame in sequence]
 
-    def convert_estimated_keypoints_sequence_to_gt_format(self):
-        for frame_id, frame in enumerate(self.keypoint_sequence):
-            self.keypoint_sequence[frame_id] = self.convert_estimated_keypoints_frame_to_gt_format(frame)
+    def convert_estimated_pose_sequence_to_gt_format(self):
+        for frame_id, frame in enumerate(self.pose_sequence):
+            self.pose_sequence[frame_id] = self.convert_estimated_pose_frame_to_gt_format(frame)
 
-    def convert_estimated_keypoints_frame_to_gt_format(self,
-                                                       keypoints: List[Tuple[float, float, float]]):
-        converted_keypoints = []
+    def convert_estimated_pose_frame_to_gt_format(self,
+                                                  pose: List[Tuple[float, float, float]]):
+        converted_pose = []
         for gt_joint_id, estimation_joint_id in JOINT_MAPPING_FROM_GT_TO_ESTIMATION:
-            converted_keypoints.append(keypoints[estimation_joint_id])
-        return converted_keypoints
+            converted_pose.append(pose[estimation_joint_id])
+        return converted_pose
 
-    def normalize_keypoints(self):
+    def normalize_poses(self):
         """
-        We normalize the keypoint sequence by transforming it into a local coordinate system.
+        We normalize the pose sequence by transforming it into a local coordinate system.
         This system is centered at the mid hip position of the first frame.
         The z axis points into the opposite direction of the gravitational force.
         The y axis points into the direction from the mid hip point to the left hip point.
         The x axis is directed accordingly, roughly into the direction the front of the hip is pointing to.
         """
-        if len(self.keypoint_sequence) == 0:
+        if len(self.pose_sequence) == 0:
             print("Sequence does not contain any poses.")
             exit(-1)
 
-        first_mid_hip_position = np.array(self.keypoint_sequence[0][0])
-        first_left_hip_position = np.array(self.keypoint_sequence[0][4])
+        first_mid_hip_position = np.array(self.pose_sequence[0][0])
+        first_left_hip_position = np.array(self.pose_sequence[0][4])
 
         mid_hip_position_xy = np.array(first_mid_hip_position[0:2])
         left_hip_position_xy = np.array(first_left_hip_position[0:2])
@@ -168,16 +168,16 @@ class PoseGraphVisualizer(object):
         angle_from_left_hip_to_y_axis = get_angle(vector_mid_to_left_hip_xy, y_axis_vector_xy)
         rotation_matrix_around_z_axis = get_rotation_matrix_around_z_axis(angle_from_left_hip_to_y_axis)
 
-        for frame_id, current_pose in enumerate(self.keypoint_sequence):
+        for frame_id, current_pose in enumerate(self.pose_sequence):
             pose_centered_at_mid_hip = np.array(current_pose) - first_mid_hip_position
             normalized_pose = np.matmul(rotation_matrix_around_z_axis, pose_centered_at_mid_hip.transpose()).transpose()
-            self.keypoint_sequence[frame_id] = normalized_pose
+            self.pose_sequence[frame_id] = normalized_pose
 
     def print_infos_about_visualization(self):
-        if self.visualize_estimated_keypoints:
-            print('Visualizing estimated keypoints')
+        if self.visualize_estimated_poses:
+            print('Visualizing estimated poses')
         else:
-            print('Visualizing ground truth keypoints')
+            print('Visualizing ground truth poses')
         print('Subject: {}'.format(self.config["subject_id"]))
         print('Sequence: {}'.format(self.config["sequence_id"]))
         print('Action type: {}'.format(self.action_label))
@@ -191,12 +191,12 @@ class PoseGraphVisualizer(object):
         self.set_axes_limits()
 
         # Create the animation
-        sequence_length = len(self.keypoint_sequence)
+        sequence_length = len(self.pose_sequence)
         _ = FuncAnimation(plot,
-                          update_lines_using_keypoints_sequence,
+                          update_lines_using_pose_sequence,
                           frames=sequence_length,
                           fargs=(self.lines,
-                                 self.keypoint_sequence,
+                                 self.pose_sequence,
                                  self.connected_joint_pairs),
                           interval=self.duration_between_frames_in_ms,
                           blit=False)
@@ -204,9 +204,9 @@ class PoseGraphVisualizer(object):
         show_animation()
 
     def set_plot_title(self):
-        window_name = 'Keypoint Visualization: Sequence {}, Camera {} - Action: {}'.format(self.config["sequence_id"],
-                                                                                           self.config["camera_id"],
-                                                                                           self.action_label)
+        window_name = 'Pose Visualization: Sequence {}, Camera {} - Action: {}'.format(self.config["sequence_id"],
+                                                                                       self.config["camera_id"],
+                                                                                       self.action_label)
         self.plot3d.set_title(window_name)
 
     def create_lines(self):
@@ -234,16 +234,16 @@ class PoseGraphVisualizer(object):
         self.plot3d.set_zlabel('Z')
 
     def compute_axes_limits(self) -> Tuple[List[float], List[float]]:
-        min_keypoint_values = [float("inf")] * 3
-        max_keypoint_values = [-float("inf")] * 3
-        for frame in self.keypoint_sequence:
+        min_pose_keypoint_values = [float("inf")] * 3
+        max_pose_keypoint_values = [-float("inf")] * 3
+        for frame in self.pose_sequence:
             current_minimum = np.minimum.reduce(frame)
-            min_keypoint_values = np.minimum(min_keypoint_values, current_minimum)
+            min_pose_keypoint_values = np.minimum(min_pose_keypoint_values, current_minimum)
 
             current_maximum = np.maximum.reduce(frame)
-            max_keypoint_values = np.maximum(max_keypoint_values, current_maximum)
+            max_pose_keypoint_values = np.maximum(max_pose_keypoint_values, current_maximum)
 
-        return min_keypoint_values, max_keypoint_values
+        return min_pose_keypoint_values, max_pose_keypoint_values
 
 
 if __name__ == '__main__':
