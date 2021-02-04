@@ -126,8 +126,8 @@ class PoseGraphVisualizer(object):
     def extract_keypoints_from_sequence(self,
                                         sequence):
         if self.visualize_estimated_keypoints:
-            self.keypoint_sequence = [frame["poses_3d_triang"] for frame in sequence
-                                      if frame["poses_3d_triang"] is not None]
+            self.keypoint_sequence = [frame["poses_3d_filter"] for frame in sequence
+                                      if frame["poses_3d_filter"] is not None]
             number_of_missing_frames = len(sequence) - len(self.keypoint_sequence)
             if number_of_missing_frames > 0:
                 print('{} estimated frames are missing/None!'.format(number_of_missing_frames))
