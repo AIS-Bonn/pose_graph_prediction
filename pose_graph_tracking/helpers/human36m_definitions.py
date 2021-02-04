@@ -39,10 +39,10 @@ COCO_COLORS = [(255, 0, 0),
 # LHip = 12,
 # LKnee = 13,
 # LAnkle = 14,
-# REye = 15,
-# LEye = 16,
-# REar = 17,
-# LEar = 18,
+# REye = 15,  Not used in estimation
+# LEye = 16,  Not used in estimation
+# REar = 17,  Not used in estimation
+# LEar = 18,  Not used in estimation
 # Head = 19,
 # Belly = 20,
 
@@ -98,3 +98,21 @@ CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH = [(0, 1),
                                                     (8, 14),
                                                     (14, 15),
                                                     (15, 16)]
+
+JOINT_MAPPING_FROM_GT_TO_ESTIMATION = [(0, 8),
+                                       (1, 9),
+                                       (2, 10),
+                                       (3, 11),
+                                       (4, 12),
+                                       (5, 13),
+                                       (6, 14),
+                                       (7, 20),
+                                       (8, 1),
+                                       (9, 0),
+                                       (10, 19),
+                                       (11, 5),
+                                       (12, 6),
+                                       (13, 7),
+                                       (14, 2),
+                                       (15, 3),
+                                       (16, 4)]

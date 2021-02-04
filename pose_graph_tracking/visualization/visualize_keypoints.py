@@ -14,9 +14,10 @@ from os.path import exists
 
 from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
 from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, \
-    CONNECTED_JOINTS_PAIRS_FOR_ESTIMATION, CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
+    CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH, JOINT_MAPPING_FROM_GT_TO_ESTIMATION
 
-from typing import Any, Callable, List, Tuple
+from typing import Any, List, Tuple
+
 
 
 def update_lines_using_pose(lines: List[Line2D],
@@ -40,25 +41,11 @@ def update_lines_using_pose(lines: List[Line2D],
         lines[link_id].set_3d_properties(link_z_values)
 
 
-def get_estimated_keypoints_from_sequence_frame(sequence_frame: dict) -> List[Tuple[float, float, float]]:
-    return sequence_frame["poses_3d_triang"]
-
-
-def get_ground_truth_keypoints_from_sequence_frame(sequence_frame: dict) -> List[Tuple[float, float, float]]:
-    return sequence_frame["labels"]["poses_3d"]
-
-
 def update_lines_using_keypoints_sequence(frame_id: int,
                                           lines: List[Line2D],
-                                          pose_sequence: List[dict],
-                                          get_pose_from_sequence_frame_function: Callable[[dict], List[Tuple[float, float, float]]],
+                                          pose_sequence: List[List[Tuple[float, float, float]]],
                                           connected_joint_pairs: List[Tuple[int, int]]) -> List[Line2D]:
-    current_frame = pose_sequence[frame_id]
-    current_pose = get_pose_from_sequence_frame_function(current_frame)
-    if current_pose is None:
-        print('missing frame t={}!'.format(current_frame['time_idx']))
-        return lines
-
+    current_pose = pose_sequence[frame_id]
     update_lines_using_pose(lines,
                             current_pose,
                             connected_joint_pairs)
@@ -68,11 +55,8 @@ def update_lines_using_keypoints_sequence(frame_id: int,
 
 class PoseGraphVisualizer(object):
     def __init__(self):
-        self.visualize_estimated_keypoints = False
-        if self.visualize_estimated_keypoints:
-            self.connected_joint_pairs = CONNECTED_JOINTS_PAIRS_FOR_ESTIMATION
-        else:
-            self.connected_joint_pairs = CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
+        self.visualize_estimated_keypoints = True
+        self.connected_joint_pairs = CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
         self.visualizer_confidence_threshold = 0.3
         self.duration_between_frames_in_ms = 100  # 100ms = 10Hz (original playback speed)
@@ -119,8 +103,32 @@ class PoseGraphVisualizer(object):
         with open(PACKAGE_ROOT_PATH + self.config["filename"]) as json_file:
             data = load_json_file(json_file)
 
-        self.keypoint_sequence = data['sequences'][self.config["sequence_id"]]
+        sequence = data['sequences'][self.config["sequence_id"]]
+        self.extract_keypoints_from_sequence(sequence)
         self.action_label = data['action_labels'][self.config["sequence_id"]]
+
+    def extract_keypoints_from_sequence(self,
+                                        sequence):
+        if self.visualize_estimated_keypoints:
+            self.keypoint_sequence = [frame["poses_3d_triang"] for frame in sequence
+                                      if frame["poses_3d_triang"] is not None]
+            number_of_missing_frames = len(sequence) - len(self.keypoint_sequence)
+            if number_of_missing_frames > 0:
+                print('{} estimated frames are missing/None!'.format(number_of_missing_frames))
+            self.convert_estimated_keypoints_sequence_to_gt_format()
+        else:
+            self.keypoint_sequence = [frame["labels"]["poses_3d"] for frame in sequence]
+
+    def convert_estimated_keypoints_sequence_to_gt_format(self):
+        for frame_id, frame in enumerate(self.keypoint_sequence):
+            self.keypoint_sequence[frame_id] = self.convert_estimated_keypoints_frame_to_gt_format(frame)
+
+    def convert_estimated_keypoints_frame_to_gt_format(self,
+                                                       keypoints: List[Tuple[float, float, float]]):
+        converted_keypoints = []
+        for gt_joint_id, estimation_joint_id in JOINT_MAPPING_FROM_GT_TO_ESTIMATION:
+            converted_keypoints.append(keypoints[estimation_joint_id])
+        return converted_keypoints
 
     def print_infos_about_visualization(self):
         if self.visualize_estimated_keypoints:
@@ -141,26 +149,14 @@ class PoseGraphVisualizer(object):
 
         # Create the animation
         sequence_length = len(self.keypoint_sequence)
-        if self.visualize_estimated_keypoints:
-            _ = FuncAnimation(plot,
-                              update_lines_using_keypoints_sequence,
-                              frames=sequence_length,
-                              fargs=(self.lines,
-                                     self.keypoint_sequence,
-                                     get_estimated_keypoints_from_sequence_frame,
-                                     self.connected_joint_pairs),
-                              interval=self.duration_between_frames_in_ms,
-                              blit=False)
-        else:  # visualize ground truth keypoints - currently they have a different format
-            _ = FuncAnimation(plot,
-                              update_lines_using_keypoints_sequence,
-                              frames=sequence_length,
-                              fargs=(self.lines,
-                                     self.keypoint_sequence,
-                                     get_ground_truth_keypoints_from_sequence_frame,
-                                     self.connected_joint_pairs),
-                              interval=self.duration_between_frames_in_ms,
-                              blit=False)
+        _ = FuncAnimation(plot,
+                          update_lines_using_keypoints_sequence,
+                          frames=sequence_length,
+                          fargs=(self.lines,
+                                 self.keypoint_sequence,
+                                 self.connected_joint_pairs),
+                          interval=self.duration_between_frames_in_ms,
+                          blit=False)
 
         show_animation()
 
@@ -198,14 +194,10 @@ class PoseGraphVisualizer(object):
         min_keypoint_values = [float("inf")] * 3
         max_keypoint_values = [-float("inf")] * 3
         for frame in self.keypoint_sequence:
-            if frame['poses_3d_triang'] is None:
-                print('missing frame t={}!'.format(frame['time_idx']))
-                continue
-
-            current_minimum = np.minimum.reduce(frame['poses_3d_triang'])
+            current_minimum = np.minimum.reduce(frame)
             min_keypoint_values = np.minimum(min_keypoint_values, current_minimum)
 
-            current_maximum = np.maximum.reduce(frame['poses_3d_triang'])
+            current_maximum = np.maximum.reduce(frame)
             max_keypoint_values = np.maximum(max_keypoint_values, current_maximum)
 
         return min_keypoint_values, max_keypoint_values
