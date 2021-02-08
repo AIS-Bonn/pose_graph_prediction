@@ -14,9 +14,11 @@ import numpy as np
 
 from os.path import exists
 
+from pose_graph_tracking.data.conversions import convert_estimated_pose_sequence_to_gt_format
+
 from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
 from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, \
-    CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH, JOINT_MAPPING_FROM_GT_TO_ESTIMATION
+    CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
 from typing import Any, List, Tuple
 
@@ -131,20 +133,9 @@ class PoseGraphVisualizer(object):
             number_of_missing_frames = len(sequence) - len(self.pose_sequence)
             if number_of_missing_frames > 0:
                 print('{} estimated frames are missing/None!'.format(number_of_missing_frames))
-            self.convert_estimated_pose_sequence_to_gt_format()
+            convert_estimated_pose_sequence_to_gt_format(self.pose_sequence)
         else:
             self.pose_sequence = [frame["labels"]["poses_3d"] for frame in sequence]
-
-    def convert_estimated_pose_sequence_to_gt_format(self):
-        for frame_id, frame in enumerate(self.pose_sequence):
-            self.pose_sequence[frame_id] = self.convert_estimated_pose_frame_to_gt_format(frame)
-
-    def convert_estimated_pose_frame_to_gt_format(self,
-                                                  pose: List[Tuple[float, float, float]]):
-        converted_pose = []
-        for gt_joint_id, estimation_joint_id in JOINT_MAPPING_FROM_GT_TO_ESTIMATION:
-            converted_pose.append(pose[estimation_joint_id])
-        return converted_pose
 
     def normalize_poses(self):
         """
