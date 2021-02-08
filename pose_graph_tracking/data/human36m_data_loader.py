@@ -2,6 +2,9 @@ from json import load as load_json_file
 
 from os.path import exists, join
 
+from pose_graph_tracking.data.conversions import convert_estimated_pose_sequence_to_gt_format, \
+    convert_action_label_to_action_id
+
 from typing import List, Union
 
 
@@ -47,10 +50,10 @@ class Human36MDataLoader(object):
             filename_of_current_subject = "keypoints_s" + str(subject_id) + "_h36m.json"
             path_to_current_subject = self.path_to_input_data_root_dir + filename_of_current_subject
 
-            self._load_sequences(path_to_current_subject)
+            self._load_sequences_from_file(path_to_current_subject)
 
-    def _load_sequences(self,
-                        path_to_current_subject: str):
+    def _load_sequences_from_file(self,
+                                  path_to_current_subject: str):
         if exists(path_to_current_subject):
             with open(path_to_current_subject) as json_file:
                 subject_data = load_json_file(json_file)
@@ -60,10 +63,27 @@ class Human36MDataLoader(object):
 
     def _incorporate_data_into_sequences(self,
                                          subject_data: dict):
-        self._add_action_labels_to_sequences(subject_data)
-        for sequence in subject_data:
-            self.sequences.append(sequence)
+        number_of_sequences = len(subject_data["action_labels"])
+        for current_sequence_id in range(number_of_sequences):
+            current_action_label = subject_data["action_labels"][current_sequence_id]
+            current_sequence = subject_data["sequences"][current_sequence_id]
 
-    def _add_action_labels_to_sequences(self,
-                                        sequences_data: dict):
-        pass
+            action_id = convert_action_label_to_action_id(current_action_label)
+
+            estimated_poses = self._extract_estimated_poses_from_sequence(current_sequence)
+            convert_estimated_pose_sequence_to_gt_format(estimated_poses)
+
+            ground_truth_poses = [frame["labels"]["poses_3d"] for frame in current_sequence]
+
+            self.sequences.append({"action_id": action_id,
+                                   "estimated_poses": estimated_poses,
+                                   "ground_truth_poses": ground_truth_poses})
+
+    def _extract_estimated_poses_from_sequence(self,
+                                               sequence: List[dict]):
+        estimated_poses = [frame["poses_3d_filter"] for frame in sequence
+                           if frame["poses_3d_filter"] is not None]
+        number_of_missing_frames = len(sequence) - len(estimated_poses)
+        if number_of_missing_frames > 0:
+            print('{} estimated frames are missing/None!'.format(number_of_missing_frames))
+        return estimated_poses
