@@ -99,6 +99,20 @@ CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH = [(0, 1),
                                                     (14, 15),
                                                     (15, 16)]
 
+# Visualization of the connected joint pairs in the Human 3.6M ground truth format
+#
+#      10          Head
+#       9          Nose
+#   11--8--14      Neck and Shoulder
+#  /    |    \
+# 12    7     15   Belly and Elbows
+# |     |     |
+# 13 4--0--1  16   Hips and Wrists
+#    |     |
+#    5     2       Knees
+#    |     |
+#    6     3       Ankles
+
 JOINT_MAPPING_FROM_GT_TO_ESTIMATION = [(0, 8),
                                        (1, 9),
                                        (2, 10),
