@@ -29,19 +29,21 @@ class Human36MDataLoader(object):
                  ids_of_subjects_to_load: Union[List[int], None] = None):
         self.sequences = []
 
+        if ids_of_subjects_to_load is not None:
+            self.ids_of_subjects_to_load = ids_of_subjects_to_load
+        else:
+            self.ids_of_subjects_to_load = [1, 5, 6, 7, 8, 9, 11]
+
         # Make sure path ends with a separator
         self.path_to_input_data_root_dir = join(path_to_data_root_directory, "")
 
-        self._load_data_from_files(ids_of_subjects_to_load)
+        self._load_data()
 
-    def _load_data_from_files(self,
-                              ids_of_subjects_to_load: Union[List[int], None] = None):
+    def _load_data(self):
         """
         Loads the sequence data for the specified subject ids and fuses the sequences in a member list.
-
-        :param ids_of_subjects_to_load: a list containing a combination of the subject ids [1 ,5, 6, 7, 8, 9, 11]
         """
-        for subject_id in ids_of_subjects_to_load:
+        for subject_id in self.ids_of_subjects_to_load:
             filename_of_current_subject = "keypoints_s" + str(subject_id) + "_h36m.json"
             path_to_current_subject = self.path_to_input_data_root_dir + filename_of_current_subject
 
