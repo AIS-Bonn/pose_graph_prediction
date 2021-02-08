@@ -9,7 +9,20 @@ class Human36MDataLoader(object):
     """
     Load Human 3.6M data from files to a list of sequences.
 
-    TODO: describe how sequences are defined
+    Each sequence consists of a dict with three entries - the action label, a list of estimated poses and a list of
+    ground truth poses.
+
+    sequence : dict
+        "action_id" : int
+        "estimated_poses" : List[Pose] : len() is number of frames in sequence
+        "ground_truth_poses" : List[Pose] : len() is number of frames in sequence
+
+    Pose : List[Joint_Position] : len() is currently 17 as there are 17 joints positions in the Human 3.6M format
+
+    Joint_Position : List[float, float, float] : 3D position of the joint
+
+    :param ids_of_subjects_to_load: a list containing a combination of the subject ids [1, 5, 6, 7, 8, 9, 11] or None to
+     load all subjects
     """
     def __init__(self,
                  path_to_data_root_directory: str,
