@@ -126,7 +126,7 @@ class PoseGraphVisualizer(object):
         self.action_label = data['action_labels'][self.config["sequence_id"]]
 
     def extract_poses_from_sequence(self,
-                                    sequence):
+                                    sequence: List[dict]):
         if self.visualize_estimated_poses:
             self.pose_sequence = [frame["poses_3d_filter"] for frame in sequence
                                   if frame["poses_3d_filter"] is not None]
