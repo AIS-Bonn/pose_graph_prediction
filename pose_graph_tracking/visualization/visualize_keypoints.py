@@ -72,6 +72,7 @@ def update_lines_using_pose_sequence(frame_id: int,
 class PoseGraphVisualizer(object):
     def __init__(self):
         self.visualize_estimated_poses = True
+        self.print_number_of_missing_estimated_joints = False
         self.connected_joint_pairs = CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
         self.visualizer_confidence_threshold = 0.3
@@ -121,6 +122,10 @@ class PoseGraphVisualizer(object):
 
         sequence = data['sequences'][self.config["sequence_id"]]
         self.extract_poses_from_sequence(sequence)
+
+        if self.print_number_of_missing_estimated_joints:
+            print("Number of missing estimated joints is ", self.get_number_of_missing_estimated_joints())
+
         self.normalize_poses()
 
         self.action_label = data['action_labels'][self.config["sequence_id"]]
@@ -136,6 +141,14 @@ class PoseGraphVisualizer(object):
             convert_estimated_pose_sequence_to_gt_format(self.pose_sequence)
         else:
             self.pose_sequence = [frame["labels"]["poses_3d"] for frame in sequence]
+
+    def get_number_of_missing_estimated_joints(self) -> int:
+        missing_joint_counter = 0
+        for frame in self.pose_sequence:
+            for joint_position in frame:
+                if joint_position[0] == 0.0 and joint_position[1] == 0.0 and joint_position[2] == 0.0:
+                    missing_joint_counter += 1
+        return missing_joint_counter
 
     def normalize_poses(self):
         """
