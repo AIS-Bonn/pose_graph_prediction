@@ -238,12 +238,13 @@ class PoseGraphVisualizer(object):
         # Create a list of empty line objects within the plot3d - .plot returns a list of lines to be plotted, we use
         #  the first for each joint pair to set a different color to each line
         self.lines = [self.plot3d.plot([], [], [])[0] for _ in range(number_of_lines)]
-        self.set_line_colors()
+        self.set_line_appearances()
 
-    def set_line_colors(self):
+    def set_line_appearances(self):
         for line_id, line in enumerate(self.lines):
             line_color = np.array(COCO_COLORS[line_id]) / 255.
             line.set_color(line_color)
+            line.set_linewidth(3)
 
     def set_axes_limits(self):
         min_axes_limits, max_axes_limits = self.compute_axes_limits()
