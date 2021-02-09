@@ -214,11 +214,15 @@ class PoseGraphVisualizer(object):
         self.create_lines()
         self.set_axes_limits()
 
+        def draw_xy_coordinate_frame():
+            return [self.plot3d.plot([-1, 1], [0, 0], [0, 0])[0], self.plot3d.plot([0, 0], [-1, 1], [0, 0])[0]]
+
         # Create the animation
         sequence_length = len(self.pose_sequence)
         _ = FuncAnimation(plot,
                           update_lines_using_pose_sequence,
                           frames=sequence_length,
+                          init_func=draw_xy_coordinate_frame,
                           fargs=(self.lines,
                                  self.pose_sequence,
                                  self.connected_joint_pairs),
