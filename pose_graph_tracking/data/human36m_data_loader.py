@@ -5,7 +5,7 @@ from os.path import exists, join
 from pose_graph_tracking.data.conversions import convert_estimated_pose_sequence_to_gt_format, \
     convert_action_label_to_action_id
 
-from typing import List, Union
+from typing import List, Tuple, Union
 
 
 class Human36MDataLoader(object):
@@ -75,6 +75,9 @@ class Human36MDataLoader(object):
             estimated_pose_sequence = self._extract_estimated_pose_sequence_from_sequence_data(current_sequence_data)
             convert_estimated_pose_sequence_to_gt_format(estimated_pose_sequence)
 
+            if self.is_any_estimated_joint_missing(estimated_pose_sequence):
+                continue
+
             ground_truth_pose_sequence = [frame["labels"]["poses_3d"] for frame in current_sequence_data]
 
             self.sequences.append({"action_id": action_id,
@@ -89,3 +92,13 @@ class Human36MDataLoader(object):
         if number_of_missing_frames > 0:
             print('{} estimated frames are missing/None!'.format(number_of_missing_frames))
         return estimated_poses
+
+    def is_any_estimated_joint_missing(self,
+                                       estimated_pose_sequence: List[List[Tuple[float, float, float]]]) -> bool:
+        for frame in estimated_pose_sequence:
+            for joint_position in frame:
+                if joint_position[0] == 0.0 and joint_position[1] == 0.0 and joint_position[2] == 0.0:
+                    print("Sequence contains missing estimated joint -> sequence is skipped.")
+                    return True
+        return False
+
