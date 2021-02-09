@@ -172,10 +172,30 @@ class PoseGraphVisualizer(object):
         angle_from_left_hip_to_y_axis = get_angle(vector_mid_to_left_hip_xy, y_axis_vector_xy)
         rotation_matrix_around_z_axis = get_rotation_matrix_around_z_axis(angle_from_left_hip_to_y_axis)
 
+        person_height = self.estimate_person_height(self.pose_sequence[0])
+
         for frame_id, current_pose in enumerate(self.pose_sequence):
             pose_centered_at_mid_hip = np.array(current_pose) - first_mid_hip_position
+            pose_centered_at_mid_hip = pose_centered_at_mid_hip / person_height
             normalized_pose = np.matmul(rotation_matrix_around_z_axis, pose_centered_at_mid_hip.transpose()).transpose()
             self.pose_sequence[frame_id] = normalized_pose
+
+    def estimate_person_height(self,
+                               pose: List[Tuple[float, float, float]]) -> float:
+        """
+        Estimate the height of a person by adding the "bone" lengths between then joints.
+
+        :param pose: List of joint positions.
+        :return: The estimated height of the person.
+        """
+        np_pose = np.array(pose)
+        shin_length = np.linalg.norm(np_pose[5] - np_pose[6])
+        thigh_length = np.linalg.norm(np_pose[4] - np_pose[5])
+        lower_spine_length = np.linalg.norm(np_pose[7] - np_pose[0])
+        upper_spine_length = np.linalg.norm(np_pose[8] - np_pose[7])
+        neck_length = np.linalg.norm(np_pose[9] - np_pose[8])
+        head_length = np.linalg.norm(np_pose[10] - np_pose[9])
+        return (shin_length + thigh_length + lower_spine_length + upper_spine_length + neck_length + head_length) / 1000
 
     def print_infos_about_visualization(self):
         if self.visualize_estimated_poses:
