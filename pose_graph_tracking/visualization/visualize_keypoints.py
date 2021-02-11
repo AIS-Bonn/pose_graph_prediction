@@ -57,6 +57,7 @@ def update_lines_using_pose_sequence(frame_id: int,
 
 class PoseGraphVisualizer(object):
     def __init__(self):
+        # If true visualizing the estimated poses, if false visualizing the ground truth poses
         self.visualize_estimated_poses = True
         self.print_number_of_missing_estimated_joints = False
         self.connected_joint_pairs = CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
