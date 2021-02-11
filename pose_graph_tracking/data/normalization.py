@@ -8,8 +8,7 @@ from typing import List, Tuple
 
 
 class PoseSequenceNormalizer(object):
-    def normalize_poses(self,
-                        pose_sequence: List[List[Tuple[float, float, float]]]):
+    def __init__(self):
         """
         We normalize the pose sequence by transforming it into a local coordinate system.
         This system is centered at the mid hip position of the first frame.
@@ -20,6 +19,16 @@ class PoseSequenceNormalizer(object):
         Additionally the poses are scaled by dividing by the estimated height of the person - assuming a small person
         (e.g. a child) moves roughly as a large person.
         """
+        self.offset = None
+        self.scale_factor = None
+        self.orientation_normalization_matrix = None
+        self.are_normalization_parameters_computed = False
+
+    def compute_normalization_parameters(self,
+                                         pose_sequence: List[List[Tuple[float, float, float]]]):
+        """
+        Compute the normalization parameters wrt. the pose_sequence and save them in the member variables.
+        """
         if len(pose_sequence) == 0:
             print("Sequence does not contain any poses.")
             exit(-1)
@@ -28,11 +37,25 @@ class PoseSequenceNormalizer(object):
         person_height = self._estimate_person_height(pose_sequence[0])
         rotation_matrix_around_z_axis = self._compute_normalization_rotation_matrix(pose_sequence[0])
 
-        for frame_id, current_pose in enumerate(pose_sequence):
-            pose_centered_at_mid_hip = np.array(current_pose) - first_mid_hip_position
-            pose_centered_at_mid_hip = pose_centered_at_mid_hip / person_height
-            normalized_pose = np.matmul(rotation_matrix_around_z_axis, pose_centered_at_mid_hip.transpose()).transpose()
-            pose_sequence[frame_id] = normalized_pose
+        self.offset = first_mid_hip_position
+        self.scale_factor = person_height
+        self.orientation_normalization_matrix = rotation_matrix_around_z_axis
+        self.are_normalization_parameters_computed = True
+
+    def normalize_pose_sequence(self,
+                                pose_sequence: List[List[Tuple[float, float, float]]]):
+        """
+        Apply the computed normalization to the provided pose_sequence.
+        """
+        if self.are_normalization_parameters_computed:
+            for frame_id, current_pose in enumerate(pose_sequence):
+                pose_centered_at_mid_hip = np.array(current_pose) - self.offset
+                pose_centered_at_mid_hip = pose_centered_at_mid_hip / self.scale_factor
+                normalized_pose = np.matmul(self.orientation_normalization_matrix,
+                                            pose_centered_at_mid_hip.transpose()).transpose()
+                pose_sequence[frame_id] = normalized_pose
+        else:
+            print("Normalization parameters were not computed. Normalization couldn\'t be applied to sequence.")
 
     def _compute_normalization_rotation_matrix(self,
                                                reference_pose: List[Tuple[float, float, float]]) -> np.ndarray:

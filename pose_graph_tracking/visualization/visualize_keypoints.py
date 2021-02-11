@@ -113,7 +113,8 @@ class PoseGraphVisualizer(object):
             print("Number of missing estimated joints is ", self.get_number_of_missing_estimated_joints())
 
         normalizer = PoseSequenceNormalizer()
-        normalizer.normalize_poses(self.pose_sequence)
+        normalizer.compute_normalization_parameters(self.pose_sequence)
+        normalizer.normalize_pose_sequence(self.pose_sequence)
 
         self.action_label = data['action_labels'][self.config["sequence_id"]]
 
