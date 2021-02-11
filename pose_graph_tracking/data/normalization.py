@@ -4,7 +4,7 @@ import numpy as np
 
 from pose_graph_tracking.data.utils import get_angle_2d, get_angle_3d, get_rotation_matrix_around_z_axis
 
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 
 class PoseSequenceNormalizer(object):
@@ -25,7 +25,7 @@ class PoseSequenceNormalizer(object):
         self.are_normalization_parameters_computed = False
 
     def compute_normalization_parameters(self,
-                                         pose_sequence: List[List[Tuple[float, float, float]]]):
+                                         pose_sequence: Union[List[List[Tuple[float, float, float]]], np.ndarray]):
         """
         Compute the normalization parameters wrt. the pose_sequence and save them in the member variables.
         """
@@ -43,7 +43,7 @@ class PoseSequenceNormalizer(object):
         self.are_normalization_parameters_computed = True
 
     def normalize_pose_sequence(self,
-                                pose_sequence: List[List[Tuple[float, float, float]]]):
+                                pose_sequence: Union[List[List[Tuple[float, float, float]]], np.ndarray]):
         """
         Apply the computed normalization to the provided pose_sequence.
         """
@@ -58,7 +58,8 @@ class PoseSequenceNormalizer(object):
             print("Normalization parameters were not computed. Normalization couldn\'t be applied to sequence.")
 
     def _compute_normalization_rotation_matrix(self,
-                                               reference_pose: List[Tuple[float, float, float]]) -> np.ndarray:
+                                               reference_pose: Union[List[Tuple[float, float, float]], np.ndarray]
+                                               ) -> np.ndarray:
         """
         Computes the rotation around the z-axis in order to rotate the reference pose in such a way that:
           (- The z axis points into the opposite direction of the gravitational force.)
@@ -123,9 +124,8 @@ class PoseSequenceNormalizer(object):
             return get_rotation_matrix_around_z_axis(angle_from_left_hip_to_neg_y_axis)
 
     def _get_normalisation_matrix_for_person_not_laying_on_its_side(self,
-                                                                    first_left_hip_position: Tuple[float, float, float],
-                                                                    first_mid_hip_position: Tuple[float, float, float]
-                                                                    ) -> np.ndarray:
+                                                                    first_left_hip_position: np.ndarray,
+                                                                    first_mid_hip_position: np.ndarray) -> np.ndarray:
         mid_hip_position_xy = np.array(first_mid_hip_position[0:2])
         left_hip_position_xy = np.array(first_left_hip_position[0:2])
         vector_mid_to_left_hip_xy = left_hip_position_xy - mid_hip_position_xy
