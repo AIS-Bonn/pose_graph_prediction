@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 from json import load as load_json_file
 
-from math import atan2, acos, cos, degrees, sin, pi
+from math import degrees
 
 from matplotlib.pyplot import figure, show as show_animation
 from matplotlib.animation import FuncAnimation
@@ -15,46 +15,13 @@ import numpy as np
 from os.path import exists
 
 from pose_graph_tracking.data.conversions import convert_estimated_pose_sequence_to_gt_format
+from pose_graph_tracking.data.utils import get_angle_2d, get_angle_3d, get_rotation_matrix_around_z_axis
 
 from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
 from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, \
     CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
-from typing import Any, List, Tuple, Union
-
-
-def get_angle_2d(vector_a_2d: Union[np.ndarray, List[float]],
-                 vector_b_2d: Union[np.ndarray, List[float]]) -> float:
-    angle = atan2(vector_b_2d[1], vector_b_2d[0]) - atan2(vector_a_2d[1], vector_a_2d[0])
-    while angle < 0.0:
-        angle += 2 * pi
-    return angle
-
-
-def get_angle_3d(vector_a_3d: np.ndarray,
-                 vector_b_3d: np.ndarray) -> float:
-    vector_a_length = np.linalg.norm(vector_a_3d)
-    vector_b_length = np.linalg.norm(vector_b_3d)
-    dot_product = np.dot(vector_a_3d, vector_b_3d)
-    return acos(dot_product/(vector_a_length * vector_b_length))
-
-
-def get_rotation_matrix_around_z_axis(angle):
-    return np.array([[cos(angle), -sin(angle), 0],
-                     [sin(angle),  cos(angle), 0],
-                     [         0,           0, 1]])
-
-
-def get_rotation_matrix_around_x_axis(angle):
-    return np.array([[1,          0,           0],
-                     [0, cos(angle), -sin(angle)],
-                     [0, sin(angle),  cos(angle)]])
-
-
-def get_rotation_matrix_around_y_axis(angle):
-    return np.array([[ cos(angle), 0, sin(angle)],
-                     [          0, 1,          0],
-                     [-sin(angle), 0, cos(angle)]])
+from typing import Any, List, Tuple
 
 
 def update_lines_using_pose(lines: List[Line2D],
