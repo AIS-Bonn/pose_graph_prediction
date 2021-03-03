@@ -1,6 +1,6 @@
 import torch
 
-from torch.nn import Module, Linear as Lin, LayerNorm, Conv2d
+from torch.nn import Module, Linear as Lin, LayerNorm, Conv2d, ReLU, LeakyReLU, Sigmoid, Tanh
 
 
 class Flatten(Module):
@@ -27,6 +27,21 @@ class Flatten(Module):
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         return input.flatten(self.start_dim, self.end_dim)
+
+
+def get_activation_function_from_type(activation_type: str):
+    available_activation_types = ["relu", "leaky_relu", "sigmoid", "tanh"]
+    assert activation_type in available_activation_types, "Requested activation type %r is not an available " \
+                                                          "activation type: %r" % (activation_type,
+                                                                                   available_activation_types)
+    if activation_type == "relu":
+        return ReLU
+    elif activation_type == "leaky_relu":
+        return LeakyReLU
+    elif activation_type == "sigmoid":
+        return Sigmoid
+    elif activation_type == "tanh":
+        return Tanh
 
 
 def init_weights(module: Module,
