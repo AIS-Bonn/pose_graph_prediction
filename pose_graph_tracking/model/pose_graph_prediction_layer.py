@@ -9,7 +9,7 @@ from torch_geometric.nn import MetaLayer
 from typing import Union
 
 
-class TrackingGraphLayer(Module):
+class PoseGraphPredictionLayer(Module):
     def __init__(self,
                  activation_type: str,
                  num_input_features_per_node: int,
@@ -50,7 +50,7 @@ class TrackingGraphLayer(Module):
         :param num_output_features_per_edge: Number of features describing the state of each edge for output.
         :param num_global_features: Number of features describing the global state of the graph.
         """
-        super(TrackingGraphLayer, self).__init__()
+        super(PoseGraphPredictionLayer, self).__init__()
 
         def init_weights(m: Module):
             negative_slope = 0 if activation_type == "relu" else 1e-2

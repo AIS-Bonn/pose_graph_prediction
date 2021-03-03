@@ -4,7 +4,7 @@ from torch.nn import Module, Linear as Lin, ReLU, LeakyReLU, Sigmoid, LayerNorm,
 
 from torch_geometric.data import Data
 
-from tracking_graph_nets.model.tracking_graph_layer import TrackingGraphLayer
+from pose_graph_tracking.model.pose_graph_prediction_layer import PoseGraphPredictionLayer
 
 from typing import Tuple
 
@@ -36,7 +36,7 @@ class Flatten(Module):
 
 
 # TODO: das ganze ab hier weiter an pose graph tracking anpassen - eigentlich sollte es PoseGraphPrediction heißen ..
-class PoseGraphTrackingNet(Module):
+class PoseGraphPredictionNet(Module):
     def __init__(self,
                  model_config: dict,  # TODO: load parameters from config
                  num_features_per_node: int = 6,
@@ -57,10 +57,10 @@ class PoseGraphTrackingNet(Module):
                  num_decoder_hidden_layers: int = 1,
                  append_sigmoid_to_association_edges_decoder: bool = False):
         """
-        Generates network layers and subnetworks necessary for the tracking graph network.
+        Generates network layers and subnetworks necessary for the Pose Graph Prediction network.
 
         The network consists of several encoders for each type of features (node, edge and global features), followed by
-        a TrackingGraphLayer to predict the next states of the hypotheses, a TrackingGraphLayer to associate
+        a PoseGraphPredictionLayer to predict the next states of the hypotheses, a PoseGraphPredictionLayer to associate
         corresponding detection-hypothesis pairs and to update the hypotheses states, and a decoder for the hypotheses'
         states to convert them to their original format as well as a decoder for the processed
         association_edges_features to a value indication which detection(s) correspond to which hypothesis.
@@ -87,7 +87,7 @@ class PoseGraphTrackingNet(Module):
         :param append_sigmoid_to_association_edges_decoder: If true, appends a sigmoid layer to the association edge
         decoder to ease up training, as the resulting values are always between 0 and 1.
        """
-        super(PoseGraphTrackingNet, self).__init__()
+        super(PoseGraphPredictionNet, self).__init__()
 
         available_activation_types = ["relu", "leaky_relu"]
         assert activation_type in available_activation_types, "Requested activation type %r is not an available " \
@@ -120,16 +120,16 @@ class PoseGraphTrackingNet(Module):
                                                                        num_encoder_layers)
 
         # Predicts the states of the hypotheses nodes at the next time step
-        self.tracking_graph_layer_for_prediction = TrackingGraphLayer(self.activation_type,
-                                                                      num_encoded_features_per_node,
-                                                                      num_node_mlp_layers,
-                                                                      num_hidden_units_for_node_mlp,
-                                                                      num_features_per_node_after_prediction,
-                                                                      num_encoded_features_per_edge,
-                                                                      num_edge_mlp_layers,
-                                                                      num_hidden_units_for_edge_mlp,
-                                                                      num_features_per_edge_after_prediction,
-                                                                      num_encoded_global_features)
+        self.tracking_graph_layer_for_prediction = PoseGraphPredictionLayer(self.activation_type,
+                                                                            num_encoded_features_per_node,
+                                                                            num_node_mlp_layers,
+                                                                            num_hidden_units_for_node_mlp,
+                                                                            num_features_per_node_after_prediction,
+                                                                            num_encoded_features_per_edge,
+                                                                            num_edge_mlp_layers,
+                                                                            num_hidden_units_for_edge_mlp,
+                                                                            num_features_per_edge_after_prediction,
+                                                                            num_encoded_global_features)
 
         # Encoders for edge_features for the association step
         self.association_edge_features_encoder = self.generateEncoder(num_features_per_association_edge,
@@ -137,16 +137,16 @@ class PoseGraphTrackingNet(Module):
                                                                       num_encoder_layers)
 
         # Associates corresponding detections and hypotheses and updates the hypotheses' states accordingly
-        self.tracking_graph_layer_for_association = TrackingGraphLayer(self.activation_type,
-                                                                       num_features_per_node_after_prediction * 2,
-                                                                       num_node_mlp_layers,
-                                                                       num_hidden_units_for_node_mlp,
-                                                                       num_features_per_node_after_association,
-                                                                       num_encoded_features_per_edge,
-                                                                       num_edge_mlp_layers,
-                                                                       num_hidden_units_for_edge_mlp,
-                                                                       num_features_per_edge_after_association,
-                                                                       num_global_features=0)
+        self.tracking_graph_layer_for_association = PoseGraphPredictionLayer(self.activation_type,
+                                                                             num_features_per_node_after_prediction * 2,
+                                                                             num_node_mlp_layers,
+                                                                             num_hidden_units_for_node_mlp,
+                                                                             num_features_per_node_after_association,
+                                                                             num_encoded_features_per_edge,
+                                                                             num_edge_mlp_layers,
+                                                                             num_hidden_units_for_edge_mlp,
+                                                                             num_features_per_edge_after_association,
+                                                                             num_global_features=0)
 
         # Decoders for features_of_nodes and features_of_association_edges
         # Decodes node features to their original number and meaning
@@ -375,7 +375,7 @@ class PoseGraphTrackingNet(Module):
         #  only neighbors within a specified distance went wrong -> was i wrong? Using two mlps, one for target nodes
         #  and one for those not targeted doesn't seem to be an option.
 
-        # Concatenate predicted hypotheses nodes from first TrackingGraphLayer with detections from encoded input data
+        # Concatenate predicted hypotheses nodes from first PoseGraphPredictionLayer with detections from encoded input data
         hypotheses_start_index = 0
         predicted_encoded_features_of_nodes = []
         # There is a batch of several graphs in the data object -> all nodes of all those graphs are stored in the

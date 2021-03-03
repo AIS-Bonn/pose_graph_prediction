@@ -9,7 +9,7 @@ import torch
 
 import numpy as np
 
-from pose_graph_tracking.model.pose_graph_tracking_net import PoseGraphTrackingNet
+from pose_graph_tracking.model.pose_graph_prediction_net import PoseGraphPredictionNet
 
 from typing import Any
 
@@ -34,8 +34,8 @@ def deterministicInitFn(worker_id: Any):
     np.random.seed(int(0))
 
 
-def getModel(model_config: dict) -> PoseGraphTrackingNet:
-    return PoseGraphTrackingNet(model_config)
+def getModel(model_config: dict) -> PoseGraphPredictionNet:
+    return PoseGraphPredictionNet(model_config)
 
 
 def load_config_file(path_to_config_file: str) -> dict:
