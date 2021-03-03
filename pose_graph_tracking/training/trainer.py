@@ -36,6 +36,7 @@ class Trainer(object):
         :param training_config: Config dict providing the hyperparameters for training.
         :param visualization_function: Optionally a visualization function can be provided to visualize the training.
         """
+        # Default parameters
         self.batch_size = 50
         self.learning_rate = 0.001
         self.number_of_epochs = 2000000
@@ -76,10 +77,10 @@ class Trainer(object):
 
     def _load_parameters_from_config(self,
                                      config: dict):
-        self.batch_size = config["batch_size"]
-        self.learning_rate = config["learning_rate"]
-        self.number_of_epochs = config["number_of_epochs"]
-        self.try_to_train_on_gpu = config["try_to_train_on_gpu"]
+        self.batch_size = config.get("batch_size", self.batch_size)
+        self.learning_rate = config.get("learning_rate", self.learning_rate)
+        self.number_of_epochs = config.get("number_of_epochs", self.number_of_epochs)
+        self.try_to_train_on_gpu = config.get("try_to_train_on_gpu", self.try_to_train_on_gpu)
 
     def _init_training_data_loader(self,
                                    training_data: Dataset,
