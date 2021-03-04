@@ -1,7 +1,7 @@
 {
   "activation_type": "relu",
   "edge_encoder_parameters": {
-    "number_of_input_channels": 5,
+    "number_of_input_channels": 3,
     "number_of_hidden_channels": 50,
     "number_of_output_channels": 20,
     "number_of_hidden_layers": 3

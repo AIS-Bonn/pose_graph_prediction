@@ -128,16 +128,12 @@ class Human36MDataset(Dataset):
                 source_node_ids_of_edges.append(source_joint_id)
                 target_node_ids_of_edges.append(target_joint_id)
 
-                normalized_source_joint_id = (source_joint_id - mean_joint_id) / mean_joint_id
-                normalized_target_joint_id = (target_joint_id - mean_joint_id) / mean_joint_id
-                x_velocity = target_joint[0] - source_joint[0]
-                y_velocity = target_joint[1] - source_joint[1]
-                z_velocity = target_joint[2] - source_joint[2]
-                edge_feature = torch.FloatTensor(array([normalized_source_joint_id,
-                                                        normalized_target_joint_id,
-                                                        x_velocity,
-                                                        y_velocity,
-                                                        z_velocity]))
+                x_difference = target_joint[0] - source_joint[0]
+                y_difference = target_joint[1] - source_joint[1]
+                z_difference = target_joint[2] - source_joint[2]
+                edge_feature = torch.FloatTensor(array([x_difference,
+                                                        y_difference,
+                                                        z_difference]))
                 features_of_edges.append(edge_feature)
         features_of_edges = torch.FloatTensor(array(features_of_edges))
         node_ids_connected_by_edges = torch.tensor([source_node_ids_of_edges,
