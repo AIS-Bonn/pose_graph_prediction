@@ -13,14 +13,13 @@
     "number_of_hidden_layers": 3
   },
   "pose_graph_prediction_layer_parameters": {
+    "number_of_global_features": 0,
     "edge_mlp_parameters": {
-      "number_of_input_channels": 20,
       "number_of_hidden_channels": 50,
       "number_of_output_channels": 20,
       "number_of_hidden_layers": 3
     },
     "node_mlp_parameters": {
-      "number_of_input_channels": 20,
       "number_of_hidden_channels": 50,
       "number_of_output_channels": 20,
       "number_of_hidden_layers": 3

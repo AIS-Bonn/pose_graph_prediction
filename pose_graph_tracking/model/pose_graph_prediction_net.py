@@ -50,40 +50,7 @@ class PoseGraphPredictionNet(Module):
                                                       self.node_encoder_parameters["number_of_hidden_layers"])
 
         # PoseGraphPredictionLayer to predict the encoded joint positions at the next time step
-        self.pose_graph_prediction_layer = PoseGraphPredictionLayer(model_config["activation_type"],
-                                                                    model_config[
-                                                                        "pose_graph_prediction_layer_parameters"][
-                                                                        "node_mlp_parameters"][
-                                                                        "number_of_input_channels"],
-                                                                    model_config[
-                                                                        "pose_graph_prediction_layer_parameters"][
-                                                                        "node_mlp_parameters"][
-                                                                        "number_of_hidden_layers"],
-                                                                    model_config[
-                                                                        "pose_graph_prediction_layer_parameters"][
-                                                                        "node_mlp_parameters"][
-                                                                        "number_of_hidden_channels"],
-                                                                    model_config[
-                                                                        "pose_graph_prediction_layer_parameters"][
-                                                                        "node_mlp_parameters"][
-                                                                        "number_of_output_channels"],
-                                                                    model_config[
-                                                                        "pose_graph_prediction_layer_parameters"][
-                                                                        "edge_mlp_parameters"][
-                                                                        "number_of_input_channels"],
-                                                                    model_config[
-                                                                        "pose_graph_prediction_layer_parameters"][
-                                                                        "edge_mlp_parameters"][
-                                                                        "number_of_hidden_layers"],
-                                                                    model_config[
-                                                                        "pose_graph_prediction_layer_parameters"][
-                                                                        "edge_mlp_parameters"][
-                                                                        "number_of_hidden_channels"],
-                                                                    model_config[
-                                                                        "pose_graph_prediction_layer_parameters"][
-                                                                        "edge_mlp_parameters"][
-                                                                        "number_of_output_channels"],
-                                                                    num_global_features=0)
+        self.pose_graph_prediction_layer = PoseGraphPredictionLayer(model_config)
 
         # Decoder to retrieve the predicted joint positions in x,y,z format
         self.node_decoder = generate_decoder(self.node_decoder_parameters["number_of_input_channels"],

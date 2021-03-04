@@ -1,3 +1,5 @@
+from pose_graph_tracking.model.utils import get_activation_function_from_type
+
 import torch
 
 from torch.nn import Module, Sequential, Linear as Lin, ReLU, LeakyReLU, LayerNorm
@@ -11,16 +13,7 @@ from typing import Union
 
 class PoseGraphPredictionLayer(Module):
     def __init__(self,
-                 activation_type: str,
-                 num_input_features_per_node: int,
-                 num_node_mlp_layers: int,
-                 num_hidden_units_for_node_mlp: int,
-                 num_output_features_per_node: int,
-                 num_input_features_per_edge: int,
-                 num_edge_mlp_layers: int,
-                 num_hidden_units_for_edge_mlp: int,
-                 num_output_features_per_edge: int,
-                 num_global_features: int):
+                 model_config: dict):
         """
         A graph network layer able to process graphs with a different number of nodes and edges.
         All nodes and edges have to have the same number of features respectively.
@@ -33,24 +26,26 @@ class PoseGraphPredictionLayer(Module):
 
         Then a NodeModel is applied to update the nodes' features.
         For each node, all updated edge features of incoming edges are summed.
+        Caveat: For nodes without incoming edges a zero vector is used.
         The resulting vector is concatenated to the features of this node and the global features forming an extended
         feature vector.
         Again an MLP is trained to process this extended feature vector to update the nodes' features.
 
         The updated features and the original global features are returned as the result of this layer.
 
-        :param activation_type: Activation type used for all activation layers within the layer - relu and leaky_relu.
-        :param num_input_features_per_node: Number of features describing the state of each node.
-        :param num_node_mlp_layers: The number of layers within the MLP of the NodeModel.
-        :param num_hidden_units_for_node_mlp: The number of hidden units used in the MLP of the NodeModel.
-        :param num_output_features_per_node: Number of features describing the state of each node for output.
-        :param num_input_features_per_edge: Number of features describing the state of each edge.
-        :param num_edge_mlp_layers: The number of layers within the MLP of the EdgeModel.
-        :param num_hidden_units_for_edge_mlp: The number of hidden units used in the MLP of the EdgeModel.
-        :param num_output_features_per_edge: Number of features describing the state of each edge for output.
-        :param num_global_features: Number of features describing the global state of the graph.
+        :param model_config: Dict containing all parameters for this Layer.
         """
         super(PoseGraphPredictionLayer, self).__init__()
+
+        activation_type = model_config["activation_type"]
+        activation_function = get_activation_function_from_type(model_config["activation_type"])
+
+        number_of_features_per_edge = model_config["edge_encoder_parameters"]["number_of_output_channels"]
+        number_of_features_per_node = model_config["node_encoder_parameters"]["number_of_output_channels"]
+        number_of_global_features = model_config["pose_graph_prediction_layer_parameters"]["number_of_global_features"]
+
+        edge_mlp_parameters = model_config["pose_graph_prediction_layer_parameters"]["edge_mlp_parameters"]
+        node_mlp_parameters = model_config["pose_graph_prediction_layer_parameters"]["node_mlp_parameters"]
 
         def init_weights(m: Module):
             negative_slope = 0 if activation_type == "relu" else 1e-2
@@ -60,39 +55,31 @@ class PoseGraphPredictionLayer(Module):
         class EdgeModel(Module):
             def __init__(self):
                 """
-                Edge model of the Tracking Graph Layer consisting of an MLP to update the edges' features based on their
-                own features, the features of the nodes the edges connect and global features.
+                Edge model consisting of an MLP to update the edges' features based on their own features, the features
+                of the nodes the edges connect and global features.
                 """
                 super(EdgeModel, self).__init__()
 
-                edge_mlp_channels_in = 2 * num_input_features_per_node + num_input_features_per_edge + num_global_features
+                number_of_input_channels = number_of_features_per_node * 2 + \
+                                           number_of_features_per_edge + \
+                                           number_of_global_features
+                number_of_hidden_channels = edge_mlp_parameters["number_of_hidden_channels"]
+                number_of_output_channels = edge_mlp_parameters["number_of_output_channels"]
+                number_of_hidden_layers = edge_mlp_parameters["number_of_hidden_layers"]
+
                 self.edge_mlp = Sequential()
-                self.edge_mlp.add_module("edge_mlp_input", Lin(edge_mlp_channels_in, num_hidden_units_for_edge_mlp))
+                self.edge_mlp.add_module("edge_mlp_input_layer",
+                                         Lin(number_of_input_channels, number_of_hidden_channels))
 
-                if num_edge_mlp_layers > 2:
-                    for layer in range(num_edge_mlp_layers - 2):
-                        self.addActivationLayerToEdgeMLP(layer, activation_type)
-                        self.edge_mlp.add_module("edge_mlp_hidden_" + str(layer), Lin(num_hidden_units_for_edge_mlp,
-                                                                                      num_hidden_units_for_edge_mlp))
+                for layer_id in range(number_of_hidden_layers):
+                    self.edge_mlp.add_module("edge_mlp_activation_function_" + str(layer_id), activation_function)
+                    self.edge_mlp.add_module("edge_mlp_hidden_layer_" + str(layer_id),
+                                             Lin(number_of_hidden_channels, number_of_hidden_channels))
 
-                self.addActivationLayerToEdgeMLP(num_edge_mlp_layers - 2, activation_type)
-                self.edge_mlp.add_module("edge_mlp_output", Lin(num_hidden_units_for_edge_mlp, num_output_features_per_edge))
-                self.edge_mlp.add_module("edge_mlp_layer_norm", LayerNorm(num_output_features_per_edge))
+                self.edge_mlp.add_module("edge_mlp_output_activation_function", activation_function)
+                self.edge_mlp.add_module("edge_mlp_output", Lin(number_of_hidden_channels, number_of_output_channels))
+                self.edge_mlp.add_module("edge_mlp_layer_norm", LayerNorm(number_of_output_channels))
                 self.edge_mlp.apply(init_weights)
-
-            def addActivationLayerToEdgeMLP(self,
-                                            layer_id: int,
-                                            activation_type: str = "relu"):
-                """
-                Adds an activation layer to the edge_mlp.
-
-                :param layer_id: ID of the activation layer to be used within the name of this layer.
-                :param activation_type: The activation type - relu or leaky_relu.
-                """
-                if activation_type == "relu":
-                    self.edge_mlp.add_module("edge_mlp_relu_" + str(layer_id), ReLU())
-                else:
-                    self.edge_mlp.add_module("edge_mlp_leaky_relu_" + str(layer_id), LeakyReLU())
 
             def forward(self,
                         features_of_source_nodes: torch.Tensor,
@@ -112,26 +99,30 @@ class PoseGraphPredictionLayer(Module):
 
                 features_of_source_nodes:
                 [[feature_0_of_source_node_of_edge_0, feature_1_of_source_node_of_edge_0, ..],
-                 [feature_0_of_source_node_of_edge_1, feature_1_of_source_node_of_edge_1, ..], .. ]
-                with size (number_of_edges_in_current_batch x number_of_nodes_features).
+                 [feature_0_of_source_node_of_edge_1, feature_1_of_source_node_of_edge_1, ..],
+                 .. ]
+                with size (number_of_edges_in_current_batch x number_of_features_per_node).
 
                 features_of_target_nodes:
                 [[feature_0_of_target_node_of_edge_0, feature_1_of_target_node_of_edge_0, ..],
-                 [feature_0_of_target_node_of_edge_1, feature_1_of_target_node_of_edge_1, ..], .. ]
-                with size (number_of_edges_in_current_batch x number_of_nodes_features).
+                 [feature_0_of_target_node_of_edge_1, feature_1_of_target_node_of_edge_1, ..],
+                 .. ]
+                with size (number_of_edges_in_current_batch x number_of_features_per_node).
 
                 features_of_edges:
                 [[feature_0_of_edge_0, feature_1_of_edge_0, ..],
-                 [feature_0_of_edge_1, feature_1_of_edge_1, ..], .. ]
-                with size (number_of_edges_in_current_batch x number_of_edges_features).
+                 [feature_0_of_edge_1, feature_1_of_edge_1, ..],
+                 .. ]
+                with size (number_of_edges_in_current_batch x number_of_features_per_edge).
 
                 global_features:
                 [[global_feature_0_of_graph_0, global_feature_1_of_graph_0, ..],
-                 [global_feature_0_of_graph_0, global_feature_1_of_graph_0, ..], .. ]
+                 [global_feature_0_of_graph_0, global_feature_1_of_graph_0, ..],
+                 .. ]
                 with size (number_of_graphs_in_current_batch x number_of_global_features_per_graph).
 
                 batch_ids:
-                [graph_id_of_edge_0, graph_id_of_edge_1, ..]
+                [graph_id_of_edge_0, .., graph_id_of_edge_1, ..]
                 with size (number_of_edges_in_current_batch). E.g. [0,0,0,1,1] for a batch with 2 graphs consisting of
                 3 and 2 edges respectively. Is used to get the correct global features for each edge from the
                 global_features tensor containing all sets of global features in the current batch.
@@ -143,12 +134,6 @@ class PoseGraphPredictionLayer(Module):
                 :param batch_ids: Tensor of ids encoding which node belongs to which graph.
                 :return: Updated features of edges.
                 """
-                # TODO: test "attentional" methods that compute/learn a value "a" (usually between 0.0 and 1.0 - softmax
-                #  could help here) in the edge model for each node pair and update each node state by computing
-                #  u = a * LearnedWeights * state
-                #  and then adding the node state by u or adding u to the node state - I tested this already but only
-                #  with a rather simple model. Multi head attention would train k models with different parameters and
-                #  feed the sum or mean of the results to an MLP to calculate the next state
                 if global_features is None:
                     edge_neighborhoods = torch.cat([features_of_source_nodes,
                                                     features_of_target_nodes,
@@ -163,40 +148,31 @@ class PoseGraphPredictionLayer(Module):
         class NodeModel(Module):
             def __init__(self):
                 """
-                Node model of the Tracking Graph Layer consisting of an MLP to update the nodes' features based on their
-                own features, the summed features of all edges pointing to that node and the global features of the
-                graph the nodes belongs to.
+                Node model consisting of an MLP to update the nodes' features based on their own features, the summed
+                features of all edges pointing to that node and the global features of the graph the nodes belong to.
                 """
                 super(NodeModel, self).__init__()
 
-                node_mlp_channels_in = num_input_features_per_node + num_input_features_per_edge + num_global_features
+                number_of_input_channels = number_of_features_per_node + \
+                                           edge_mlp_parameters["number_of_output_channels"] + \
+                                           number_of_global_features
+                number_of_hidden_channels = node_mlp_parameters["number_of_hidden_channels"]
+                number_of_output_channels = node_mlp_parameters["number_of_output_channels"]
+                number_of_hidden_layers = node_mlp_parameters["number_of_hidden_layers"]
+
                 self.node_mlp = Sequential()
-                self.node_mlp.add_module("node_mlp_input", Lin(node_mlp_channels_in, num_hidden_units_for_node_mlp))
+                self.node_mlp.add_module("node_mlp_input_layer", Lin(number_of_input_channels, number_of_hidden_channels))
 
-                if num_node_mlp_layers > 2:
-                    for layer in range(num_node_mlp_layers - 2):
-                        self.addActivationLayerToNodeMLP(layer, activation_type)
-                        self.node_mlp.add_module("node_mlp_hidden_" + str(layer), Lin(num_hidden_units_for_node_mlp,
-                                                                                      num_hidden_units_for_node_mlp))
+                for layer_id in range(number_of_hidden_layers):
+                    self.node_mlp.add_module("node_mlp_activation_function_" + str(layer_id), activation_function)
+                    self.node_mlp.add_module("node_mlp_hidden_layer_" + str(layer_id),
+                                             Lin(number_of_hidden_channels, number_of_hidden_channels))
 
-                self.addActivationLayerToNodeMLP(num_node_mlp_layers - 2, activation_type)
-                self.node_mlp.add_module("node_mlp_output", Lin(num_hidden_units_for_node_mlp, num_output_features_per_node))
-                self.node_mlp.add_module("node_mlp_layer_norm", LayerNorm(num_output_features_per_node))
+                self.node_mlp.add_module("node_mlp_output_activation_function", activation_function)
+                self.node_mlp.add_module("node_mlp_output_layer",
+                                         Lin(number_of_hidden_channels, number_of_output_channels))
+                self.node_mlp.add_module("node_mlp_layer_norm", LayerNorm(number_of_output_channels))
                 self.node_mlp.apply(init_weights)
-
-            def addActivationLayerToNodeMLP(self,
-                                            layer_id: int,
-                                            activation_type: str = "relu"):
-                """
-                Adds an activation layer to the node_mlp.
-
-                :param layer_id: ID of the activation layer to be used within the name of this layer.
-                :param activation_type: The activation type - relu or leaky_relu.
-                """
-                if activation_type == "relu":
-                    self.node_mlp.add_module("node_mlp_relu_" + str(layer_id), ReLU())
-                else:
-                    self.node_mlp.add_module("node_mlp_leaky_relu_" + str(layer_id), LeakyReLU())
 
             def forward(self,
                         features_of_nodes: torch.Tensor,
@@ -218,8 +194,9 @@ class PoseGraphPredictionLayer(Module):
 
                 features_of_nodes:
                 [[feature_0_of_node_0, feature_1_of_node_0, ..],
-                 [feature_0_of_node_1, feature_1_of_node_1, ..], .. ]
-                with size (number_of_nodes_in_current_batch x number_of_nodes_features).
+                 [feature_0_of_node_1, feature_1_of_node_1, ..],
+                 .. ]
+                with size (number_of_nodes_in_current_batch x number_of_features_per_node).
 
                 node_ids_for_edges:
                 [[source_node_id_of_edge_0, source_node_id_of_edge_1, ..],
@@ -228,16 +205,18 @@ class PoseGraphPredictionLayer(Module):
 
                 features_of_edges:
                 [[feature_0_of_edge_0, feature_1_of_edge_0, ..],
-                 [feature_0_of_edge_1, feature_1_of_edge_1, ..], .. ]
-                with size (number_of_edges_in_current_batch x number_of_edges_features).
+                 [feature_0_of_edge_1, feature_1_of_edge_1, ..],
+                 .. ]
+                with size (number_of_edges_in_current_batch x number_of_features_per_edge).
 
                 global_features:
                 [[global_feature_0_of_graph_0, global_feature_1_of_graph_0, ..],
-                 [global_feature_0_of_graph_0, global_feature_1_of_graph_0, ..], .. ]
+                 [global_feature_0_of_graph_0, global_feature_1_of_graph_0, ..],
+                 .. ]
                 with size (number_of_graphs_in_current_batch x number_of_global_features_per_graph).
 
                 batch_ids:
-                [graph_id_of_node_0, graph_id_of_node_1, ..]
+                [graph_id_of_node_0, .., graph_id_of_node_1, ..]
                 with size (number_of_nodes_in_current_batch). E.g. [0,0,0,1,1] for a batch with 2 graphs consisting of
                 3 and 2 nodes respectively. Is used to get the correct global features for each node from the
                 global_features tensor containing all sets of global features in the current batch.
@@ -253,6 +232,7 @@ class PoseGraphPredictionLayer(Module):
 
                 # Sum up features_of_edges of all edges pointing to the same target node
                 # E.g. first entry of result contains sum of all features_of_edges from edges pointing to the first node
+                # A feature vector containing all zeros is generated for nodes without incoming edges
                 edge_features_summed_by_target = scatter_add(features_of_edges,
                                                              target_node_ids,
                                                              dim=0,
@@ -276,7 +256,7 @@ class PoseGraphPredictionLayer(Module):
                 global_features: Union[torch.Tensor, None] = None,
                 batch_ids: Union[torch.Tensor, None] = None) -> Union[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
-        Calls EdgeModel and NodeModel in this order to update the features of the nodes and edges using trained MLPs.
+        Calls EdgeModel and NodeModel in this order to update the features of the edges and nodes using trained MLPs.
 
         :param features_of_nodes: Tensor of features defining nodes.
         :param node_ids_for_edges: Tensor encoding the connections between nodes by edges.
