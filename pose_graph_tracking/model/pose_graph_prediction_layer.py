@@ -72,11 +72,11 @@ class PoseGraphPredictionLayer(Module):
                                          Lin(number_of_input_channels, number_of_hidden_channels))
 
                 for layer_id in range(number_of_hidden_layers):
-                    self.edge_mlp.add_module("edge_mlp_activation_function_" + str(layer_id), activation_function)
+                    self.edge_mlp.add_module("edge_mlp_activation_function_" + str(layer_id), activation_function())
                     self.edge_mlp.add_module("edge_mlp_hidden_layer_" + str(layer_id),
                                              Lin(number_of_hidden_channels, number_of_hidden_channels))
 
-                self.edge_mlp.add_module("edge_mlp_output_activation_function", activation_function)
+                self.edge_mlp.add_module("edge_mlp_output_activation_function", activation_function())
                 self.edge_mlp.add_module("edge_mlp_output", Lin(number_of_hidden_channels, number_of_output_channels))
                 self.edge_mlp.add_module("edge_mlp_layer_norm", LayerNorm(number_of_output_channels))
                 self.edge_mlp.apply(init_weights)
@@ -164,11 +164,11 @@ class PoseGraphPredictionLayer(Module):
                 self.node_mlp.add_module("node_mlp_input_layer", Lin(number_of_input_channels, number_of_hidden_channels))
 
                 for layer_id in range(number_of_hidden_layers):
-                    self.node_mlp.add_module("node_mlp_activation_function_" + str(layer_id), activation_function)
+                    self.node_mlp.add_module("node_mlp_activation_function_" + str(layer_id), activation_function())
                     self.node_mlp.add_module("node_mlp_hidden_layer_" + str(layer_id),
                                              Lin(number_of_hidden_channels, number_of_hidden_channels))
 
-                self.node_mlp.add_module("node_mlp_output_activation_function", activation_function)
+                self.node_mlp.add_module("node_mlp_output_activation_function", activation_function())
                 self.node_mlp.add_module("node_mlp_output_layer",
                                          Lin(number_of_hidden_channels, number_of_output_channels))
                 self.node_mlp.add_module("node_mlp_layer_norm", LayerNorm(number_of_output_channels))
