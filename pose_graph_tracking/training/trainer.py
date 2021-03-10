@@ -201,7 +201,7 @@ class Trainer(object):
             ground_truth = torch.cat([single_graphs_data.ground_truth for single_graphs_data in data]
                                      ).to(model_result.device)
         else:
-            ground_truth = data.gt_features_of_nodes
+            ground_truth = data.ground_truth
 
         # Compute loss as mean squared error between model result and ground truth
         loss = MSELoss()(model_result, ground_truth)
