@@ -54,7 +54,7 @@ class Human36MDataset(Dataset):
     @property
     def processed_file_names(self) -> List[str]:
         if self.graphs_filenames is None:
-            return ["files_do_not_exist"]
+            return []
         else:
             return self.graphs_filenames
 
