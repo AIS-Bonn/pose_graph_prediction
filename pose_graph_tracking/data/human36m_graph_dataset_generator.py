@@ -116,7 +116,7 @@ class Human36MDataset(Dataset):
         for joint_id, joint in enumerate(estimated_poses_sample[1]):
             # Normalize joint_id to range from -1 to 1
             normalized_joint_id = (joint_id - mean_joint_id) / mean_joint_id
-            node_features = torch.FloatTensor(array([normalized_joint_id, joint[0], joint[1], joint[2]]))
+            node_features = [normalized_joint_id, joint[0], joint[1], joint[2]]
             features_of_nodes.append(node_features)
         features_of_nodes = torch.FloatTensor(array(features_of_nodes))
 
@@ -132,9 +132,7 @@ class Human36MDataset(Dataset):
                 x_difference = target_joint[0] - source_joint[0]
                 y_difference = target_joint[1] - source_joint[1]
                 z_difference = target_joint[2] - source_joint[2]
-                edge_feature = torch.FloatTensor(array([x_difference,
-                                                        y_difference,
-                                                        z_difference]))
+                edge_feature = [x_difference, y_difference, z_difference]
                 features_of_edges.append(edge_feature)
         features_of_edges = torch.FloatTensor(array(features_of_edges))
         node_ids_connected_by_edges = torch.tensor([source_node_ids_of_edges,
