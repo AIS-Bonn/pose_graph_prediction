@@ -12,7 +12,7 @@ training_hyperparameter_config = load_config_file(path_to_training_hyperparamete
 makeDeterministicAsPossible()
 
 training_data = Human36MDataset(data_save_directory=PATH_TO_DATA_DIRECTORY + "Human36M/training_data",
-                                ids_of_subjects_to_load=[1])
+                                ids_of_subjects_to_load=[1, 6, 7, 8, 9, 11])
 
 test_data = Human36MDataset(data_save_directory=PATH_TO_DATA_DIRECTORY + "Human36M/test_data",
                             ids_of_subjects_to_load=[5])
