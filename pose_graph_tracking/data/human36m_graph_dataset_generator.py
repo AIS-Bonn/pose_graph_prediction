@@ -73,7 +73,7 @@ class Human36MDataset(Dataset):
             last_start_index_for_sampling = len(sequence["estimated_poses"]) - self.sample_sequence_lenght + 1
             for frame in range(last_start_index_for_sampling):
                 estimated_poses_sample = copy(sequence["estimated_poses"][frame: frame + self.sample_sequence_lenght])
-                ground_truth_sample = copy(sequence["ground_truth"][frame: frame + self.sample_sequence_lenght])
+                ground_truth_sample = copy(sequence["ground_truth_poses"][frame: frame + self.sample_sequence_lenght])
                 normalizer.compute_normalization_parameters(estimated_poses_sample)
                 normalizer.normalize_pose_sequence(estimated_poses_sample)
                 normalizer.normalize_pose_sequence(ground_truth_sample)
