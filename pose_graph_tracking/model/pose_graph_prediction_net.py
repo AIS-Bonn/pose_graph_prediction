@@ -99,7 +99,7 @@ class PoseGraphPredictionNet(Module):
                                                                                     global_features=None,
                                                                                     batch_ids=data.batch)
 
-        predicted_encoded_nodes = encoded_features_of_edges + residuals_of_node_features
+        predicted_encoded_nodes = encoded_features_of_nodes + residuals_of_node_features
 
         predicted_nodes = self.node_decoder(predicted_encoded_nodes)
         return predicted_nodes
