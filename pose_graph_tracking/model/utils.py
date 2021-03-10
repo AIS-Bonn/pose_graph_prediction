@@ -86,7 +86,7 @@ def generate_encoder(number_of_input_channels: int,
     assert number_of_hidden_layers >= 0, "Number of hidden layers for encoder must be a positive int or zero."
 
     sequential = torch.nn.Sequential()
-    sequential.add_module("encoder_input_layer", Lin(number_of_input_channels, number_of_output_channels))
+    sequential.add_module("encoder_input_layer", Lin(number_of_input_channels, number_of_hidden_channels))
 
     for layer_id in range(number_of_hidden_layers):
         sequential.add_module("encoder_activation_function_" + str(layer_id), activation_function())
