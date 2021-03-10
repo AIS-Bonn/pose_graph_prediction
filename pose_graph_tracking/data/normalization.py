@@ -156,4 +156,4 @@ class PoseSequenceNormalizer(object):
         upper_spine_length = np.linalg.norm(np_pose[8] - np_pose[7])
         neck_length = np.linalg.norm(np_pose[9] - np_pose[8])
         head_length = np.linalg.norm(np_pose[10] - np_pose[9])
-        return (shin_length + thigh_length + lower_spine_length + upper_spine_length + neck_length + head_length) / 1000
+        return shin_length + thigh_length + lower_spine_length + upper_spine_length + neck_length + head_length
