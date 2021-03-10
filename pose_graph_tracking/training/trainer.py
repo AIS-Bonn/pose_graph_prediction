@@ -127,12 +127,12 @@ class Trainer(object):
         results = []
         for epoch in range(self.number_of_epochs):
             # Train model on whole training set and return mean loss for this epoch
-            train_state_loss, train_association_loss = self.train()
+            train_loss = self.train()
             # Compute loss on test set after this epoch of training
-            test_state_loss, test_association_loss = self.test()
+            test_loss = self.test()
 
             # Save all resulting loss history in a file
-            results.append([epoch, train_state_loss, train_association_loss, test_state_loss, test_association_loss])
+            results.append([epoch, train_loss, test_loss])
             f = open(MODEL_DIRECTORY + "results", 'wb')
             dump(results, f)
             f.close()
@@ -142,12 +142,8 @@ class Trainer(object):
                 self.save_model(str(epoch))
                 print(datetime.now(),
                       ' epoch ', epoch,
-                      ' train_state_loss: ', train_state_loss,
-                      ' train_assoc_loss: ', train_association_loss,
-                      ' train_loss: ', train_state_loss + train_association_loss,
-                      ' test_state_loss: ', test_state_loss,
-                      ' test_assoc_loss: ', test_association_loss,
-                      ' test_loss: ', test_state_loss + test_association_loss)
+                      ' train_loss: ', train_loss,
+                      ' test_loss: ', test_loss)
 
     def train(self) -> float:
         """
