@@ -88,6 +88,7 @@ class Human36MDataset(Dataset):
         dataset_description = {"number_of_samples": i,
                                "frames_in_a_sample": self.sample_sequence_lenght,
                                "subject_ids": self.ids_of_subjects_to_load}
+        self.graphs_filenames = ['data_{}.pt'.format(i) for i in range(dataset_description["number_of_samples"])]
         with open(self.path_to_dataset_description_file, "w") as outfile:
             save_json_file(dataset_description, outfile, indent=2)
 
