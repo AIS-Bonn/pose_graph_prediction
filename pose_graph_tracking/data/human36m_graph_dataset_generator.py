@@ -70,7 +70,7 @@ class Human36MDataset(Dataset):
         for sequence_id in sequence_ids_progress_bar:
             sequence = data_loader.sequences[sequence_id]
 
-            last_start_index_for_sampling = len(sequence) - self.sample_sequence_lenght + 1
+            last_start_index_for_sampling = len(sequence["estimated_poses"]) - self.sample_sequence_lenght + 1
             for frame in range(last_start_index_for_sampling):
                 estimated_poses_sample = copy(sequence["estimated_poses"][frame: frame + self.sample_sequence_lenght])
                 ground_truth_sample = copy(sequence["ground_truth"][frame: frame + self.sample_sequence_lenght])
