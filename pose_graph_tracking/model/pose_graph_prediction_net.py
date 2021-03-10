@@ -62,8 +62,8 @@ class PoseGraphPredictionNet(Module):
     def _get_parameters_from_config(self,
                                     model_config: dict):
         self.activation_function = get_activation_function_from_type(model_config["activation_type"])
-        self._get_encoder_decoder_parameters(self.node_encoder_parameters, model_config["node_encoder_parameters"])
         self._get_encoder_decoder_parameters(self.edge_encoder_parameters, model_config["edge_encoder_parameters"])
+        self._get_encoder_decoder_parameters(self.node_encoder_parameters, model_config["node_encoder_parameters"])
         self._get_encoder_decoder_parameters(self.node_decoder_parameters, model_config["node_decoder_parameters"])
 
     def _get_encoder_decoder_parameters(self,
