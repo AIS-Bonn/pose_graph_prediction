@@ -94,7 +94,7 @@ class PoseGraphPredictionNet(Module):
         encoded_features_of_nodes = self.node_features_encoder(data.x)
 
         residuals_of_node_features, _, _ = self.pose_graph_prediction_layer.forward(encoded_features_of_nodes,
-                                                                                    data.node_ids_connected_by_edges,
+                                                                                    data.node_indexes_connected_by_edges,
                                                                                     encoded_features_of_edges,
                                                                                     data.batch)
 

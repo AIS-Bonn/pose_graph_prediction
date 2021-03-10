@@ -147,7 +147,7 @@ class Human36MDataset(Dataset):
 
         data = Data(x=features_of_nodes,
                     features_of_edges=features_of_edges,
-                    node_ids_connected_by_edges=node_ids_connected_by_edges,
+                    node_indexes_connected_by_edges=node_ids_connected_by_edges,  # name within Data has to include 'index' in order for collate() to work properly..
                     action_id=action_id_tensor,
                     ground_truth=ground_truth_node_positions)
 
