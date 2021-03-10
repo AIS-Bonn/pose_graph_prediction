@@ -151,9 +151,4 @@ class Human36MDataset(Dataset):
                     action_id=action_id_tensor,
                     ground_truth=ground_truth_node_positions)
 
-        print("data ", data)
-
-        print("Not tested yet")
-        exit(-1)
-
         return data
