@@ -56,6 +56,7 @@ class PoseSequenceNormalizer(object):
                 pose_sequence[frame_id] = normalized_pose
         else:
             print("Normalization parameters were not computed. Normalization couldn\'t be applied to sequence.")
+            exit(-1)
 
     def _compute_normalization_rotation_matrix(self,
                                                reference_pose: Union[List[Tuple[float, float, float]], np.ndarray]
