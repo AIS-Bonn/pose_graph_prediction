@@ -2,6 +2,8 @@ from math import degrees
 
 import numpy as np
 
+from numpy.linalg import inv as invert_matrix
+
 from pose_graph_tracking.data.utils import get_angle_2d, get_angle_3d, get_rotation_matrix_around_z_axis
 
 from typing import List, Tuple, Union
@@ -56,6 +58,22 @@ class PoseSequenceNormalizer(object):
                 pose_sequence[frame_id] = normalized_pose
         else:
             print("Normalization parameters were not computed. Normalization couldn\'t be applied to sequence.")
+            exit(-1)
+
+    def denormalize_pose(self,
+                         pose: Union[List[Tuple[float, float, float]], np.ndarray]):
+        """
+        Denormalize the provided pose. # TODO: change failure behaviour
+        """
+        if self.are_normalization_parameters_computed:
+            normalized_pose = np.array(pose)
+            derotated_pose = np.matmul(invert_matrix(self.orientation_normalization_matrix),
+                                       normalized_pose.transpose()).transpose()
+            descaled_pose = derotated_pose * self.scale_factor
+            denormalized_pose = descaled_pose + self.offset
+            return denormalized_pose
+        else:
+            print("Normalization parameters were not computed. Denormalization couldn\'t be applied to pose.")
             exit(-1)
 
     def _compute_normalization_rotation_matrix(self,
