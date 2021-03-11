@@ -39,28 +39,30 @@ class PoseGraphPredictionNet(Module):
         self._get_parameters_from_config(model_config)
 
         # Encoders for edge- and node features
+        dropout_prob_encoders = 0.0
         self.edge_features_encoder = generate_encoder(self.edge_encoder_parameters["number_of_input_channels"],
                                                       self.edge_encoder_parameters["number_of_hidden_channels"],
                                                       self.edge_encoder_parameters["number_of_output_channels"],
                                                       self.activation_function,
-                                                      self.dropout_probability,
+                                                      dropout_prob_encoders,
                                                       self.edge_encoder_parameters["number_of_hidden_layers"])
         self.node_features_encoder = generate_encoder(self.node_encoder_parameters["number_of_input_channels"],
                                                       self.node_encoder_parameters["number_of_hidden_channels"],
                                                       self.node_encoder_parameters["number_of_output_channels"],
                                                       self.activation_function,
-                                                      self.dropout_probability,
+                                                      dropout_prob_encoders,
                                                       self.node_encoder_parameters["number_of_hidden_layers"])
 
         # PoseGraphPredictionLayer to predict the encoded joint positions at the next time step
         self.pose_graph_prediction_layer = PoseGraphPredictionLayer(model_config)
 
         # Decoder to retrieve the predicted joint positions in x,y,z format
+        dropout_prob_decoder = 0.0
         self.node_decoder = generate_decoder(self.node_decoder_parameters["number_of_input_channels"],
                                              self.node_decoder_parameters["number_of_hidden_channels"],
                                              self.node_decoder_parameters["number_of_output_channels"],
                                              self.activation_function,
-                                             self.dropout_probability,
+                                             dropout_prob_decoder,
                                              self.node_decoder_parameters["number_of_hidden_layers"])
 
     def _get_parameters_from_config(self,
