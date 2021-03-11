@@ -1,6 +1,6 @@
 import torch
 
-from torch.nn import Module, Linear as Lin, LayerNorm, Conv2d, ReLU, LeakyReLU, Sigmoid, Tanh
+from torch.nn import Conv2d, Dropout, LayerNorm, LeakyReLU, Linear as Lin, Module, ReLU, Sigmoid, Tanh
 
 
 class Flatten(Module):
@@ -55,6 +55,7 @@ def generate_encoder(number_of_input_channels: int,
                      number_of_hidden_channels: int,
                      number_of_output_channels: int,
                      activation_function: Module,
+                     dropout_probability: float = 0.5,
                      number_of_hidden_layers: int = 1) -> torch.nn.Sequential:
     """
     Generates an encoder network wrt. input parameters.
@@ -77,6 +78,7 @@ def generate_encoder(number_of_input_channels: int,
     :param number_of_hidden_channels: Number of hidden features/channels.
     :param number_of_output_channels: Number of output features/channels.
     :param activation_function: Activation function.
+    :param dropout_probability: Probability for dropout.
     :param number_of_hidden_layers: Number of hidden layers used for the encoder.
     :return: Returns the generated encoder.
     """
@@ -90,10 +92,12 @@ def generate_encoder(number_of_input_channels: int,
 
     for layer_id in range(number_of_hidden_layers):
         sequential.add_module("encoder_activation_function_" + str(layer_id), activation_function())
+        sequential.add_module("encoder_hidden_dropout_" + str(layer_id), Dropout(dropout_probability))
         sequential.add_module("encoder_hidden_layer_" + str(layer_id), Lin(number_of_hidden_channels,
                                                                            number_of_hidden_channels))
 
     sequential.add_module("encoder_activation_function_" + str(number_of_hidden_layers), activation_function())
+    sequential.add_module("encoder_output_dropout", Dropout(dropout_probability))
     sequential.add_module("encoder_output_layer", Lin(number_of_hidden_channels, number_of_output_channels))
     sequential.add_module("encoder_layer_norm", LayerNorm(number_of_output_channels))
     sequential.apply(init_weights)
@@ -104,6 +108,7 @@ def generate_decoder(number_of_input_channels: int,
                      number_of_hidden_channels: int,
                      number_of_output_channels: int,
                      activation_function: Module,
+                     dropout_probability: float = 0.5,
                      number_of_hidden_layers: int = 1) -> torch.nn.Sequential:
     """
     Generates an decoder network wrt. input parameters.
@@ -125,6 +130,7 @@ def generate_decoder(number_of_input_channels: int,
     :param number_of_hidden_channels: Number of hidden features/channels.
     :param number_of_output_channels: Number of output features/channels.
     :param activation_function: Activation function.
+    :param dropout_probability: Probability for dropout.
     :param number_of_hidden_layers: Number of hidden layers used for the decoder.
     :return: Returns the generated decoder.
     """
@@ -138,10 +144,12 @@ def generate_decoder(number_of_input_channels: int,
     sequential.add_module("decoder_input_activation_function", activation_function())
 
     for layer_id in range(number_of_hidden_layers):
+        sequential.add_module("decoder_hidden_dropout_" + str(layer_id), Dropout(dropout_probability))
         sequential.add_module("decoder_hidden_" + str(layer_id), Lin(number_of_hidden_channels,
                                                                      number_of_hidden_channels))
         sequential.add_module("decoder_activation_function_" + str(layer_id), activation_function())
 
+    sequential.add_module("decoder_output_dropout", Dropout(dropout_probability))
     sequential.add_module("decoder_output", Lin(number_of_hidden_channels, number_of_output_channels))
     sequential.apply(init_weights)
     return sequential

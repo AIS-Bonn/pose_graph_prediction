@@ -2,7 +2,7 @@ from pose_graph_tracking.model.utils import get_activation_function_from_type
 
 import torch
 
-from torch.nn import Module, Sequential, Linear as Lin, ReLU, LeakyReLU, LayerNorm
+from torch.nn import Dropout, Module, Sequential, Linear as Lin, LayerNorm
 
 from torch_scatter import scatter_add
 
@@ -40,6 +40,8 @@ class PoseGraphPredictionLayer(Module):
         activation_type = model_config["activation_type"]
         activation_function = get_activation_function_from_type(model_config["activation_type"])
 
+        dropout_probability = model_config["dropout_probability"]
+
         number_of_features_per_edge = model_config["edge_encoder_parameters"]["number_of_output_channels"]
         number_of_features_per_node = model_config["node_encoder_parameters"]["number_of_output_channels"]
         number_of_global_features = model_config["pose_graph_prediction_layer_parameters"]["number_of_global_features"]
@@ -73,10 +75,12 @@ class PoseGraphPredictionLayer(Module):
 
                 for layer_id in range(number_of_hidden_layers):
                     self.edge_mlp.add_module("edge_mlp_activation_function_" + str(layer_id), activation_function())
+                    self.edge_mlp.add_module("edge_mlp_hidden_dropout_" + str(layer_id), Dropout(dropout_probability))
                     self.edge_mlp.add_module("edge_mlp_hidden_layer_" + str(layer_id),
                                              Lin(number_of_hidden_channels, number_of_hidden_channels))
 
                 self.edge_mlp.add_module("edge_mlp_output_activation_function", activation_function())
+                self.edge_mlp.add_module("edge_mlp_output_dropout", Dropout(dropout_probability))
                 self.edge_mlp.add_module("edge_mlp_output", Lin(number_of_hidden_channels, number_of_output_channels))
                 self.edge_mlp.add_module("edge_mlp_layer_norm", LayerNorm(number_of_output_channels))
                 self.edge_mlp.apply(init_weights)
@@ -165,10 +169,12 @@ class PoseGraphPredictionLayer(Module):
 
                 for layer_id in range(number_of_hidden_layers):
                     self.node_mlp.add_module("node_mlp_activation_function_" + str(layer_id), activation_function())
+                    self.node_mlp.add_module("node_mlp_hidden_dropout_" + str(layer_id), Dropout(dropout_probability))
                     self.node_mlp.add_module("node_mlp_hidden_layer_" + str(layer_id),
                                              Lin(number_of_hidden_channels, number_of_hidden_channels))
 
                 self.node_mlp.add_module("node_mlp_output_activation_function", activation_function())
+                self.node_mlp.add_module("node_mlp_output_dropout", Dropout(dropout_probability))
                 self.node_mlp.add_module("node_mlp_output_layer",
                                          Lin(number_of_hidden_channels, number_of_output_channels))
                 self.node_mlp.add_module("node_mlp_layer_norm", LayerNorm(number_of_output_channels))
