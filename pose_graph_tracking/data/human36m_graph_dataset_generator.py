@@ -99,7 +99,7 @@ class Human36MDataset(Dataset):
     def convert_samples_to_graph_data(self,
                                       estimated_poses_sample: Union[List[List[Tuple[float, float, float]]], ndarray],
                                       ground_truth_sample: Union[List[List[Tuple[float, float, float]]], ndarray],
-                                      action_id: int):
+                                      action_id: int) -> Data:
         if len(estimated_poses_sample) != 3:
             print("Data conversion is currently implemented just for a sample length of 3. Exiting.")
             exit(-1)
