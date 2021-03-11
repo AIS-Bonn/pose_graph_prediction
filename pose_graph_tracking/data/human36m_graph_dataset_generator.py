@@ -18,6 +18,9 @@ from tqdm import tqdm
 from typing import List, Tuple, Union
 
 
+PoseSequenceType = List[List[Tuple[float, float, float]]]
+
+
 class Human36MDataset(Dataset):
     def __init__(self,
                  data_save_directory: str,
@@ -74,9 +77,9 @@ class Human36MDataset(Dataset):
                 estimated_poses_sample = copy(sequence["estimated_poses"][frame: frame + self.sample_sequence_lenght])
                 ground_truth_sample = copy(sequence["ground_truth_poses"][frame: frame + self.sample_sequence_lenght])
 
-                data = self.convert_samples_to_graph_data(estimated_poses_sample,
-                                                          ground_truth_sample,
-                                                          sequence["action_id"])
+                data = self._convert_samples_to_graph_data(estimated_poses_sample,
+                                                           ground_truth_sample,
+                                                           sequence["action_id"])
 
                 torch.save(data, join(self.processed_dir, 'data_{}.pt'.format(i)))
                 i += 1
@@ -96,10 +99,10 @@ class Human36MDataset(Dataset):
         data = torch.load(join(self.processed_dir, 'data_{}.pt'.format(idx)))
         return data
 
-    def convert_samples_to_graph_data(self,
-                                      estimated_poses_sample: Union[List[List[Tuple[float, float, float]]], ndarray],
-                                      ground_truth_sample: Union[List[List[Tuple[float, float, float]]], ndarray],
-                                      action_id: int) -> Data:
+    def _convert_samples_to_graph_data(self,
+                                       estimated_poses_sample: Union[PoseSequenceType, ndarray],
+                                       ground_truth_sample: Union[PoseSequenceType, ndarray],
+                                       action_id: int) -> Data:
         if len(estimated_poses_sample) != 3:
             print("Data conversion is currently implemented just for a sample length of 3. Exiting.")
             exit(-1)
