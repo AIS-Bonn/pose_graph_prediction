@@ -112,41 +112,14 @@ class Human36MDataset(Dataset):
         normalizer.normalize_pose_sequence(estimated_poses_sample)
         normalizer.normalize_pose_sequence(ground_truth_sample)
 
-        number_of_joints = len(estimated_poses_sample[0])
-        mean_joint_id = number_of_joints / 2
-
-        # Convert each joint from the latest time step to a node
-        features_of_nodes = []
-        for joint_id, joint in enumerate(estimated_poses_sample[1]):
-            # Normalize joint_id to range from -1 to 1
-            normalized_joint_id = (joint_id - mean_joint_id) / mean_joint_id
-            node_features = [normalized_joint_id, joint[0], joint[1], joint[2]]
-            features_of_nodes.append(node_features)
-        features_of_nodes = torch.FloatTensor(array(features_of_nodes))
-
-        # Compute the features of the edges between each node pair
-        features_of_edges = []
-        source_node_ids_of_edges = []
-        target_node_ids_of_edges = []
-        for source_joint_id, source_joint in enumerate(estimated_poses_sample[0]):
-            for target_joint_id, target_joint in enumerate(estimated_poses_sample[1]):
-                source_node_ids_of_edges.append(source_joint_id)
-                target_node_ids_of_edges.append(target_joint_id)
-
-                x_difference = target_joint[0] - source_joint[0]
-                y_difference = target_joint[1] - source_joint[1]
-                z_difference = target_joint[2] - source_joint[2]
-                edge_feature = [x_difference, y_difference, z_difference]
-                features_of_edges.append(edge_feature)
-        features_of_edges = torch.FloatTensor(array(features_of_edges))
-        node_ids_connected_by_edges = torch.tensor([source_node_ids_of_edges,
-                                                    target_node_ids_of_edges], dtype=torch.long)
+        features_of_nodes = self._get_features_of_nodes(estimated_poses_sample)
+        features_of_edges = self._get_features_of_edges(estimated_poses_sample)
+        node_ids_connected_by_edges = self._get_node_ids_connected_by_edges(estimated_poses_sample)
 
         # Convert the ground truth - the states of the joints in the next time step - to the format of the network's
         # output
         ground_truth_node_positions = torch.FloatTensor(array(ground_truth_sample[-1]))
 
-        # TODO: Remove later on
         action_id_tensor = torch.IntTensor(array([action_id]))
 
         data = Data(x=features_of_nodes,
@@ -159,3 +132,42 @@ class Human36MDataset(Dataset):
                     normalization_rotation_matrix=torch.FloatTensor(normalizer.orientation_normalization_matrix))
 
         return data
+
+    def _get_features_of_nodes(self,
+                               estimated_poses_sample: Union[PoseSequenceType, ndarray]) -> torch.FloatTensor:
+        number_of_joints = len(estimated_poses_sample[0])
+        mean_joint_id = number_of_joints / 2
+
+        # Convert each joint from the latest time step to a node
+        features_of_nodes = []
+        for joint_id, joint in enumerate(estimated_poses_sample[1]):
+            # Normalize joint_id to range from -1 to 1
+            normalized_joint_id = (joint_id - mean_joint_id) / mean_joint_id
+            node_features = [normalized_joint_id, joint[0], joint[1], joint[2]]
+            features_of_nodes.append(node_features)
+        return torch.FloatTensor(array(features_of_nodes))
+
+    def _get_features_of_edges(self,
+                               estimated_poses_sample: Union[PoseSequenceType, ndarray]) -> torch.FloatTensor:
+        features_of_edges = []
+        for source_joint in estimated_poses_sample[0]:
+            for target_joint in estimated_poses_sample[1]:
+                x_difference = target_joint[0] - source_joint[0]
+                y_difference = target_joint[1] - source_joint[1]
+                z_difference = target_joint[2] - source_joint[2]
+                edge_feature = [x_difference, y_difference, z_difference]
+                features_of_edges.append(edge_feature)
+        return torch.FloatTensor(array(features_of_edges))
+
+        # TODO: Remove later on
+    def _get_node_ids_connected_by_edges(self,
+                                         estimated_poses_sample: Union[PoseSequenceType, ndarray]) -> torch.Tensor:
+        source_node_ids_of_edges = []
+        target_node_ids_of_edges = []
+        for source_joint_id in range(len(estimated_poses_sample[0])):
+            for target_joint_id in range(len(estimated_poses_sample[1])):
+                source_node_ids_of_edges.append(source_joint_id)
+                target_node_ids_of_edges.append(target_joint_id)
+
+        return torch.tensor([source_node_ids_of_edges,
+                             target_node_ids_of_edges], dtype=torch.long)
