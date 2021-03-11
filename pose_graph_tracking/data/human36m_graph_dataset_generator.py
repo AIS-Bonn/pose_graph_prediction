@@ -150,6 +150,9 @@ class Human36MDataset(Dataset):
                     features_of_edges=features_of_edges,
                     node_indexes_connected_by_edges=node_ids_connected_by_edges,  # name within Data has to include 'index' in order for collate() to work properly..
                     action_id=action_id_tensor,
-                    ground_truth=ground_truth_node_positions)
+                    ground_truth=ground_truth_node_positions,
+                    normalization_offset=torch.FloatTensor(normalizer.offset),
+                    normalization_scale=torch.FloatTensor(array([normalizer.scale_factor])),
+                    normalization_rotation_matrix=torch.FloatTensor(normalizer.orientation_normalization_matrix))
 
         return data
