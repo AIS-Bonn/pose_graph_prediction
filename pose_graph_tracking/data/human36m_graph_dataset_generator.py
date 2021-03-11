@@ -62,7 +62,6 @@ class Human36MDataset(Dataset):
         i = 0
         data_loader = Human36MDataLoader(self.path_to_data_root_directory,
                                          self.ids_of_subjects_to_load)
-        normalizer = PoseSequenceNormalizer()
 
         number_of_sequences = len(data_loader.sequences)
         sequence_ids_progress_bar = tqdm(range(number_of_sequences))
@@ -74,9 +73,6 @@ class Human36MDataset(Dataset):
             for frame in range(last_start_index_for_sampling):
                 estimated_poses_sample = copy(sequence["estimated_poses"][frame: frame + self.sample_sequence_lenght])
                 ground_truth_sample = copy(sequence["ground_truth_poses"][frame: frame + self.sample_sequence_lenght])
-                normalizer.compute_normalization_parameters(estimated_poses_sample)
-                normalizer.normalize_pose_sequence(estimated_poses_sample)
-                normalizer.normalize_pose_sequence(ground_truth_sample)
 
                 data = self.convert_samples_to_graph_data(estimated_poses_sample,
                                                           ground_truth_sample,
@@ -107,6 +103,11 @@ class Human36MDataset(Dataset):
         if len(estimated_poses_sample) != 3:
             print("Data conversion is currently implemented just for a sample length of 3. Exiting.")
             exit(-1)
+
+        normalizer = PoseSequenceNormalizer()
+        normalizer.compute_normalization_parameters(estimated_poses_sample)
+        normalizer.normalize_pose_sequence(estimated_poses_sample)
+        normalizer.normalize_pose_sequence(ground_truth_sample)
 
         number_of_joints = len(estimated_poses_sample[0])
         mean_joint_id = number_of_joints / 2
