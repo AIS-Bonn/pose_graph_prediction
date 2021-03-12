@@ -11,14 +11,14 @@ from pose_graph_tracking.helpers.defaults import PATH_TO_DATA_DIRECTORY
 
 import torch
 
-from torch_geometric.data import Dataset
+from torch_geometric.data import InMemoryDataset
 
 from tqdm import tqdm
 
 from typing import List, Union
 
 
-class Human36MDataset(Dataset):
+class Human36MDataset(InMemoryDataset):
     def __init__(self,
                  data_save_directory: str,
                  path_to_data_root_directory: str = PATH_TO_DATA_DIRECTORY + 'original/',
