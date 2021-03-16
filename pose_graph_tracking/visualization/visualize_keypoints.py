@@ -35,9 +35,9 @@ def update_lines_using_pose(lines: List[Line2D],
         link_y_values = np.array([link_start_keypoint[1], link_end_keypoint[1]])
         link_z_values = np.array([link_start_keypoint[2], link_end_keypoint[2]])
         # Convert from millimeters to meters
-        link_x_values = link_x_values / 1000.0
-        link_y_values = link_y_values / 1000.0
-        link_z_values = link_z_values / 1000.0
+        link_x_values = link_x_values
+        link_y_values = link_y_values
+        link_z_values = link_z_values
 
         data_array = np.array([link_x_values, link_y_values])
         lines[link_id].set_data(data_array)
@@ -196,13 +196,13 @@ class PoseGraphVisualizer(object):
     def set_axes_limits(self):
         min_axes_limits, max_axes_limits = self.compute_axes_limits()
 
-        self.plot3d.set_xlim3d([min_axes_limits[0] / 1000.0, max_axes_limits[0] / 1000.0])
+        self.plot3d.set_xlim3d([min_axes_limits[0], max_axes_limits[0]])
         self.plot3d.set_xlabel('X')
 
-        self.plot3d.set_ylim3d([min_axes_limits[1] / 1000.0, max_axes_limits[1] / 1000.0])
+        self.plot3d.set_ylim3d([min_axes_limits[1], max_axes_limits[1]])
         self.plot3d.set_ylabel('Y')
 
-        self.plot3d.set_zlim3d([min_axes_limits[2] / 1000.0, max_axes_limits[2] / 1000.0])
+        self.plot3d.set_zlim3d([min_axes_limits[2], max_axes_limits[2]])
         self.plot3d.set_zlabel('Z')
 
     def compute_axes_limits(self) -> Tuple[List[float], List[float]]:
