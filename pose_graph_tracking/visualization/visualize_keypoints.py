@@ -3,7 +3,6 @@ from argparse import ArgumentParser
 from json import load as load_json_file
 
 from matplotlib.pyplot import figure, show as show_animation
-from matplotlib.animation import FuncAnimation
 from matplotlib.lines import Line2D
 
 from mpl_toolkits.mplot3d.axes3d import Axes3D
@@ -18,6 +17,8 @@ from pose_graph_tracking.data.normalization import PoseSequenceNormalizer
 from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
 from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, \
     CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
+
+from pose_graph_tracking.visualization.utils import StoppableAnimation
 
 from typing import Any, List, Tuple
 
@@ -161,15 +162,15 @@ class PoseGraphVisualizer(object):
 
         # Create the animation
         sequence_length = len(self.pose_sequence)
-        _ = FuncAnimation(plot,
-                          update_lines_using_pose_sequence,
-                          frames=sequence_length,
-                          init_func=draw_xy_coordinate_frame,
-                          fargs=(self.lines,
-                                 self.pose_sequence,
-                                 self.connected_joint_pairs),
-                          interval=self.duration_between_frames_in_ms,
-                          blit=False)
+        _ = StoppableAnimation(plot,
+                               update_lines_using_pose_sequence,
+                               frames=sequence_length,
+                               init_func=draw_xy_coordinate_frame,
+                               fargs=(self.lines,
+                                      self.pose_sequence,
+                                      self.connected_joint_pairs),
+                               interval=self.duration_between_frames_in_ms,
+                               blit=False)
 
         show_animation()
 
