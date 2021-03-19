@@ -30,10 +30,16 @@ class PoseGraphSequentialVisualizer(StoppableSequentialVisualizer):
         super(PoseGraphSequentialVisualizer, self).__init__()
 
         self.poses_to_visualize = []
+
+        self.link_colors = COCO_COLORS
         self.connected_joint_pairs = CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
         self.min_axes_limits = [-1, -1, -1]
         self.max_axes_limits = [1, 1, 1]
+
+    def set_link_colors(self,
+                        link_colors: List[Tuple[int, int, int]]):
+        self.link_colors = link_colors
 
     def set_graph_connections(self,
                               connected_node_id_pairs: List[Tuple[int, int]]):
@@ -61,7 +67,7 @@ class PoseGraphSequentialVisualizer(StoppableSequentialVisualizer):
                 link_end_keypoint = pose[linked_joint_ids[1]]
 
                 line = self._create_line(link_start_keypoint, link_end_keypoint)
-                self._set_line_appearance(line, COCO_COLORS[link_id])
+                self._set_line_appearance(line, self.link_colors[link_id])
                 self.plot3d.add_line(line)
 
         self._set_plots_axes_limits()
