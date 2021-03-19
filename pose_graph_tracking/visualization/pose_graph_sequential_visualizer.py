@@ -5,7 +5,7 @@ from numpy import array
 from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, \
     CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
-from pose_graph_tracking.visualization.sequential_visualizer import StoppableSequentialVisualizer
+from pose_graph_tracking.visualization.stoppable_sequential_visualizer import StoppableSequentialVisualizer
 
 from typing import List, Tuple
 
