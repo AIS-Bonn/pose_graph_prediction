@@ -2,11 +2,6 @@ from argparse import ArgumentParser
 
 from json import load as load_json_file
 
-from matplotlib.pyplot import figure, show as show_animation
-from matplotlib.lines import Line2D
-
-from mpl_toolkits.mplot3d.axes3d import Axes3D
-
 import numpy as np
 
 from os.path import exists
@@ -18,45 +13,12 @@ from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
 from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, \
     CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
-from pose_graph_tracking.visualization.utils import StoppableAnimation
+from pose_graph_tracking.visualization.pose_graph_sequential_visualizer import PoseGraphSequentialVisualizer
 
 from typing import Any, List, Tuple
 
 
-def update_lines_using_pose(lines: List[Line2D],
-                            pose: List[Tuple[float, float, float]],
-                            connected_joint_pairs: List[Tuple[int, int]]):
-    for link_id, linked_joint_ids in enumerate(connected_joint_pairs):
-        link_start_keypoint = pose[linked_joint_ids[0]]
-        link_end_keypoint = pose[linked_joint_ids[1]]
-
-        # Restructure data to provide it to the line setters later on
-        link_x_values = np.array([link_start_keypoint[0], link_end_keypoint[0]])
-        link_y_values = np.array([link_start_keypoint[1], link_end_keypoint[1]])
-        link_z_values = np.array([link_start_keypoint[2], link_end_keypoint[2]])
-        # Convert from millimeters to meters
-        link_x_values = link_x_values
-        link_y_values = link_y_values
-        link_z_values = link_z_values
-
-        data_array = np.array([link_x_values, link_y_values])
-        lines[link_id].set_data(data_array)
-        lines[link_id].set_3d_properties(link_z_values)
-
-
-def update_lines_using_pose_sequence(frame_id: int,
-                                     lines: List[Line2D],
-                                     pose_sequence: List[List[Tuple[float, float, float]]],
-                                     connected_joint_pairs: List[Tuple[int, int]]) -> List[Line2D]:
-    current_pose = pose_sequence[frame_id]
-    update_lines_using_pose(lines,
-                            current_pose,
-                            connected_joint_pairs)
-
-    return lines
-
-
-class PoseGraphVisualizer(object):
+class Human36MPoseGraphVisualizer(object):
     def __init__(self):
         # If true visualizing the estimated poses, if false visualizing the ground truth poses
         self.visualize_estimated_poses = True
@@ -73,9 +35,6 @@ class PoseGraphVisualizer(object):
         self.pose_sequence = None
         self.action_label = None
         self.load_poses()
-
-        self.plot3d = None
-        self.lines = None
 
         self.print_infos_about_visualization()
 
@@ -150,60 +109,12 @@ class PoseGraphVisualizer(object):
         print('Action type: {}'.format(self.action_label))
 
     def visualize(self):
-        plot = figure()
-        plot.canvas.set_window_title("Pose Graph Visualization")
-        self.plot3d = Axes3D(plot)
-        self.set_plot_title()
-        self.create_lines()
-        self.set_axes_limits()
-
-        def draw_xy_coordinate_frame():
-            return [self.plot3d.plot([-1, 1], [0, 0], [0, 0])[0], self.plot3d.plot([0, 0], [-1, 1], [0, 0])[0]]
-
-        # Create the animation
-        sequence_length = len(self.pose_sequence)
-        _ = StoppableAnimation(plot,
-                               update_lines_using_pose_sequence,
-                               frames=sequence_length,
-                               init_func=draw_xy_coordinate_frame,
-                               fargs=(self.lines,
-                                      self.pose_sequence,
-                                      self.connected_joint_pairs),
-                               interval=self.duration_between_frames_in_ms,
-                               blit=False)
-
-        show_animation()
-
-    def set_plot_title(self):
-        window_name = 'Pose Visualization: Sequence {}, Camera {} - Action: {}'.format(self.config["sequence_id"],
-                                                                                       self.config["camera_id"],
-                                                                                       self.action_label)
-        self.plot3d.set_title(window_name)
-
-    def create_lines(self):
-        number_of_lines = len(self.connected_joint_pairs)
-        # Create a list of empty line objects within the plot3d - .plot returns a list of lines to be plotted, we use
-        #  the first for each joint pair to set a different color to each line
-        self.lines = [self.plot3d.plot([], [], [])[0] for _ in range(number_of_lines)]
-        self.set_line_appearances()
-
-    def set_line_appearances(self):
-        for line_id, line in enumerate(self.lines):
-            line_color = np.array(COCO_COLORS[line_id]) / 255.
-            line.set_color(line_color)
-            line.set_linewidth(3)
-
-    def set_axes_limits(self):
-        min_axes_limits, max_axes_limits = self.compute_axes_limits()
-
-        self.plot3d.set_xlim3d([min_axes_limits[0], max_axes_limits[0]])
-        self.plot3d.set_xlabel('X')
-
-        self.plot3d.set_ylim3d([min_axes_limits[1], max_axes_limits[1]])
-        self.plot3d.set_ylabel('Y')
-
-        self.plot3d.set_zlim3d([min_axes_limits[2], max_axes_limits[2]])
-        self.plot3d.set_zlabel('Z')
+        sequential_visualizer = PoseGraphSequentialVisualizer()
+        sequential_visualizer.set_graph_connections(self.connected_joint_pairs)
+        sequential_visualizer.set_axes_limits(*self.compute_axes_limits())
+        for pose in self.pose_sequence:
+            sequential_visualizer.provide_pose(pose)
+            sequential_visualizer.draw_provided_poses()
 
     def compute_axes_limits(self) -> Tuple[List[float], List[float]]:
         min_pose_keypoint_values = [float("inf")] * 3
@@ -219,5 +130,5 @@ class PoseGraphVisualizer(object):
 
 
 if __name__ == '__main__':
-    visualizer = PoseGraphVisualizer()
+    visualizer = Human36MPoseGraphVisualizer()
     visualizer.visualize()
