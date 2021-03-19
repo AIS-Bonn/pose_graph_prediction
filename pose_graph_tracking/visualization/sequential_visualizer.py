@@ -1,62 +1,58 @@
-import matplotlib as mpl
+from matplotlib.pyplot import figure, ion, waitforbuttonpress
+
 from mpl_toolkits.mplot3d import Axes3D
-import numpy as np
-import matplotlib.pyplot as plt
 
-from time import sleep
+from typing import Any
 
 
-class SequentialVisualizer(object):
-    def __init__(self):
-        # TODO: prepare plot and data structure
-        lines = []
+class StoppableSequentialVisualizer(object):
+    """
+    Abstract class providing the functionality to visualize a sequence of data frame by frame.
+    The visualization can be stopped and continued by pressing a keyboard key.
+
+    A subclass has to implement the _draw_plot method, providing data to the plot.
+    Calling the update_plot method updates the visualization.
+    """
+    def __init__(self,
+                 window_title: str = "Sequential Visualization"):
         self.is_requested_to_pause = False
 
-        plt.ion()
+        # Activate interactive mode for plots
+        ion()
 
-        self.fig = plt.figure()
-        self.ax = self.fig.gca(projection='3d')
+        # Create figure and set key press to de- and activate visualization pause
+        self.fig = figure()
+        self.fig.canvas.set_window_title(window_title)
+        self.fig.canvas.mpl_connect('key_press_event', self._request_to_pause_visualization)
+
+        self.plot3d = Axes3D(self.fig)
         self._clear_plot()
 
-        theta = np.linspace(-4 * np.pi, 4 * np.pi, 100)
-        self.z = np.linspace(-2, 2, 100)
-        r = self.z ** 2 + 1
-        self.x = r * np.sin(theta)
-        self.y = r * np.cos(theta)
+    def _clear_plot(self):
+        self.plot3d.cla()
+        self.plot3d.text2D(0.05, 0.95, "Press key to pause/continue", transform=self.plot3d.transAxes)
 
-        self.fig.canvas.mpl_connect('key_press_event', self._pause_visualization)
+    def _request_to_pause_visualization(self,
+                                        _):
+        self.is_requested_to_pause = True
 
     def update_plot(self,
-                    data=None):
-        # TODO: update the visualized data
+                    data: Any):
         if self.is_requested_to_pause:
             self._wait_for_key_press()
+            self.is_requested_to_pause = False
 
         self._clear_plot()
-
-        self.x += 0.1
-        self.ax.plot(self.x,
-                     self.y,
-                     self.z, label='parametric curve')
+        self._draw_plot(data)
         # Updates the visualization, without forcing the visualization window into the foreground
         self.fig.canvas.flush_events()
 
-    def _clear_plot(self):
-        self.ax.cla()
-        self.ax.text2D(0.05, 0.95, "Press key to pause/continue", transform=self.ax.transAxes)
-
-    def _pause_visualization(self,
-                             _):
-        self.is_requested_to_pause = True
-
     def _wait_for_key_press(self,
                             timeout: float = -1.0):
-        while not plt.waitforbuttonpress(timeout):
+        while not waitforbuttonpress(timeout):
             pass
-        self.is_requested_to_pause = False
 
-
-if __name__ == '__main__':
-    visualizer = SequentialVisualizer()
-    for i in range(600):
-        visualizer.update_plot()
+    def _draw_plot(self,
+                   data: Any):
+        # Performs actual drawing of the plot.
+        raise NotImplementedError('Needs to be implemented by subclasses to actually make an animation.')
