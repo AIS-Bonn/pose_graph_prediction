@@ -1,14 +1,16 @@
-from matplotlib.pyplot import figure, ion, waitforbuttonpress
+from matplotlib.pyplot import figure, ion
+from matplotlib.backend_bases import Event
 
 from mpl_toolkits.mplot3d import Axes3D
 
+from time import sleep
 from typing import Any
 
 
 class StoppableSequentialVisualizer(object):
     """
     Abstract class providing the functionality to visualize a sequence of data frame by frame.
-    The visualization can be stopped and continued by pressing a keyboard key.
+    The visualization can be stopped and continued by pressing the space bar.
 
     A subclass has to implement the _draw_plot method, providing data to the plot.
     Calling the update_plot method updates the visualization.
@@ -23,7 +25,7 @@ class StoppableSequentialVisualizer(object):
         # Create figure and set key press to de- and activate visualization pause
         self.fig = figure()
         self.fig.canvas.set_window_title(window_title)
-        self.fig.canvas.mpl_connect('key_press_event', self._request_to_pause_visualization)
+        self.fig.canvas.mpl_connect('key_press_event', self._request_to_pause_or_continue_visualization)
         # Updates the visualization, without forcing the visualization window into the foreground
         self._update_visualization = self.fig.canvas.flush_events
 
@@ -34,24 +36,24 @@ class StoppableSequentialVisualizer(object):
         self.plot3d.cla()
         self.plot3d.text2D(0.05, 0.95, "Press key to pause/continue", transform=self.plot3d.transAxes)
 
-    def _request_to_pause_visualization(self,
-                                        _):
-        self.is_requested_to_pause = True
+    def _request_to_pause_or_continue_visualization(self,
+                                                    event: Event):
+        if event.key == " ":
+            self.is_requested_to_pause = not self.is_requested_to_pause
+
 
     def update_plot(self,
                     data: Any):
-        if self.is_requested_to_pause:
-            self._wait_for_key_press()
-            self.is_requested_to_pause = False
-
         self._clear_plot()
         self._draw_plot(data)
         self._update_visualization()
 
-    def _wait_for_key_press(self,
-                            timeout: float = -1.0):
-        while not waitforbuttonpress(timeout):
-            pass
+        self._handle_user_requests()
+
+    def _handle_user_requests(self):
+        while self.is_requested_to_pause:
+            sleep(0.01)  # 100 frames per second
+            self._update_visualization()
 
     def _draw_plot(self,
                    data: Any):
