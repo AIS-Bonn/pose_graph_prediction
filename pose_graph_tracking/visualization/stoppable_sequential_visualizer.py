@@ -24,6 +24,8 @@ class StoppableSequentialVisualizer(object):
         self.fig = figure()
         self.fig.canvas.set_window_title(window_title)
         self.fig.canvas.mpl_connect('key_press_event', self._request_to_pause_visualization)
+        # Updates the visualization, without forcing the visualization window into the foreground
+        self._update_visualization = self.fig.canvas.flush_events
 
         self.plot3d = Axes3D(self.fig)
         self._clear_plot()
@@ -44,8 +46,7 @@ class StoppableSequentialVisualizer(object):
 
         self._clear_plot()
         self._draw_plot(data)
-        # Updates the visualization, without forcing the visualization window into the foreground
-        self.fig.canvas.flush_events()
+        self._update_visualization()
 
     def _wait_for_key_press(self,
                             timeout: float = -1.0):
