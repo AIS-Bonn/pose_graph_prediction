@@ -7,39 +7,42 @@ from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, \
 
 from pose_graph_tracking.visualization.stoppable_sequential_visualizer import StoppableSequentialVisualizer
 
-from typing import List, Tuple
+from typing import Dict, List, Tuple, Union
 
 
 Pose = List[Tuple[float, float, float]]
+ColorRGB = Tuple[int, int, int]
+LinkColors = List[ColorRGB]
+ColoredPose = Dict[str, Union[Pose, LinkColors]]
 
 
 class PoseGraphSequentialVisualizer(StoppableSequentialVisualizer):
     """
     Stoppable visualizer for 3D pose graphs.
-    Input poses you want to visualize with provide_pose and provide_poses methods.
+    Input poses you want to visualize using the provide_pose* methods.
     After providing poses, call draw_provided_poses to update the visualization.
 
     Example
     --------
     visualizer = PoseGraphSequentialVisualizer()
     for pose in poses:
-        visualizer.provide_pose(pose)
+        visualizer.provide_pose_with_color(pose, [255, 0, 0])
         visualizer.draw_provided_poses()
     """
     def __init__(self):
         super(PoseGraphSequentialVisualizer, self).__init__()
 
-        self.poses_to_visualize = []
+        self.colored_poses_to_visualize = []
 
-        self.link_colors = COCO_COLORS
+        self.default_link_colors = COCO_COLORS
         self.connected_joint_pairs = CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
         self.min_axes_limits = [-1, -1, -1]
         self.max_axes_limits = [1, 1, 1]
 
-    def set_link_colors(self,
-                        link_colors: List[Tuple[int, int, int]]):
-        self.link_colors = link_colors
+    def set_default_link_colors(self,
+                                link_colors: List[Tuple[int, int, int]]):
+        self.default_link_colors = link_colors
 
     def set_graph_connections(self,
                               connected_node_id_pairs: List[Tuple[int, int]]):
@@ -50,24 +53,47 @@ class PoseGraphSequentialVisualizer(StoppableSequentialVisualizer):
         for pose in poses:
             self.provide_pose(pose)
 
+    def provide_poses_with_colors(self,
+                                  poses: List[Pose],
+                                  colors_of_poses: List[LinkColors]):
+        for pose, pose_color in zip(poses, colors_of_poses):
+            self.provide_pose_with_colors(pose, pose_color)
+
     def provide_pose(self,
                      pose: Pose):
-        self.poses_to_visualize.append(pose)
+        self.colored_poses_to_visualize.append({"pose": pose,
+                                                "link_colors": self.default_link_colors})
+
+    def provide_pose_with_uniform_color(self,
+                                        pose: Pose,
+                                        color: ColorRGB):
+        link_colors = [color] * len(pose)
+        self.colored_poses_to_visualize.append({"pose": pose,
+                                                "link_colors": link_colors})
+
+    def provide_pose_with_colors(self,
+                                 pose: Pose,
+                                 link_colors: LinkColors):
+        assert len(pose) >= len(link_colors), "Provide at least one color per link"
+        self.colored_poses_to_visualize.append({"pose": pose,
+                                                "link_colors": link_colors})
 
     def draw_provided_poses(self):
         """ Visualized provided poses by calling update_plot of super, which internally calls our _draw_plot. """
-        self.update_plot(self.poses_to_visualize)
-        self.poses_to_visualize.clear()
+        self.update_plot(self.colored_poses_to_visualize)
+        self.colored_poses_to_visualize.clear()
 
     def _draw_plot(self,
-                   poses: List[Pose]):
-        for pose in poses:
+                   colored_poses: List[ColoredPose]):
+        for colored_pose in colored_poses:
+            pose = colored_pose["pose"]
+            link_colors = colored_pose["link_colors"]
             for link_id, linked_joint_ids in enumerate(self.connected_joint_pairs):
                 link_start_keypoint = pose[linked_joint_ids[0]]
                 link_end_keypoint = pose[linked_joint_ids[1]]
 
                 line = self._create_line(link_start_keypoint, link_end_keypoint)
-                self._set_line_appearance(line, self.link_colors[link_id])
+                self._set_line_appearance(line, link_colors[link_id])
                 self.plot3d.add_line(line)
 
         self._set_plots_axes_limits()
