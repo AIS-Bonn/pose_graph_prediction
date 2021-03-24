@@ -82,6 +82,38 @@ def convert_samples_to_graph_data(estimated_poses_sample: Union[PoseSequenceType
 
     if action_id is not None:
         data["action_id"] = torch.IntTensor(array([action_id]))
+
+    return data
+
+
+def convert_poses_to_graph_data(previous_estimated_pose: Union[PoseType, ndarray],
+                                current_estimated_pose: Union[PoseType, ndarray],
+                                ground_truth_next_pose: Union[PoseType, ndarray, None] = None,
+                                action_id: Optional[int] = None) -> Data:
+    normalizer = PoseSequenceNormalizer()
+    normalizer.compute_normalization_parameters(previous_estimated_pose)
+    previous_estimated_pose = normalizer.normalize_pose(previous_estimated_pose)
+    current_estimated_pose = normalizer.normalize_pose(current_estimated_pose)
+
+    features_of_nodes = get_features_of_nodes(current_estimated_pose)
+    features_of_edges = get_features_of_edges([previous_estimated_pose, current_estimated_pose])
+    node_ids_connected_by_edges = get_node_ids_connected_by_edges([previous_estimated_pose, current_estimated_pose])
+
+    data = Data(x=features_of_nodes,
+                features_of_edges=features_of_edges,
+                node_indexes_connected_by_edges=node_ids_connected_by_edges,
+                # name within Data has to include 'index' in order for collate() to work properly..
+                normalization_offset=torch.FloatTensor(normalizer.offset),
+                normalization_scale=torch.FloatTensor(array([normalizer.scale_factor])),
+                normalization_rotation_matrix=torch.FloatTensor(normalizer.orientation_normalization_matrix))
+
+    if ground_truth_next_pose is not None:
+        ground_truth_next_pose = normalizer.normalize_pose(ground_truth_next_pose)
+        data["ground_truth"] = torch.FloatTensor(array(ground_truth_next_pose))
+
+    if action_id is not None:
+        data["action_id"] = torch.IntTensor(array([action_id]))
+
     return data
 
 
