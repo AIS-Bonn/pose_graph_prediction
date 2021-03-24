@@ -14,7 +14,7 @@ from torch.optim import Adam
 from torch_geometric.data import Data, DataListLoader, DataLoader, Dataset
 from torch_geometric.nn import DataParallel
 
-from pose_graph_tracking.helpers.utils import deterministicInitFn
+from pose_graph_tracking.helpers.utils import deterministic_init_function
 from pose_graph_tracking.helpers.defaults import MODEL_DIRECTORY, MODEL_NAME_PREFIX
 
 from typing import Callable, Union
@@ -95,12 +95,12 @@ class Trainer(object):
             self.training_data_loader = DataListLoader(training_data,
                                                        batch_size=batch_size,
                                                        shuffle=True,
-                                                       worker_init_fn=deterministicInitFn)
+                                                       worker_init_fn=deterministic_init_function)
         else:
             self.training_data_loader = DataLoader(training_data,
                                                    batch_size=batch_size,
                                                    shuffle=True,
-                                                   worker_init_fn=deterministicInitFn)
+                                                   worker_init_fn=deterministic_init_function)
 
     def _init_test_data_loader(self,
                                test_data: Dataset,
@@ -114,11 +114,11 @@ class Trainer(object):
         if self.number_of_gpus > 1:
             self.test_data_loader = DataListLoader(test_data,
                                                    batch_size=batch_size,
-                                                   worker_init_fn=deterministicInitFn)
+                                                   worker_init_fn=deterministic_init_function)
         else:
             self.test_data_loader = DataLoader(test_data,
                                                batch_size=batch_size,
-                                               worker_init_fn=deterministicInitFn)
+                                               worker_init_fn=deterministic_init_function)
 
     def run_training_session(self):
         """

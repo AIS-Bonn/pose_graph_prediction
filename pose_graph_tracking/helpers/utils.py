@@ -14,7 +14,7 @@ from pose_graph_tracking.model.pose_graph_prediction_net import PoseGraphPredict
 from typing import Any
 
 
-def makeDeterministicAsPossible():
+def make_deterministic_as_possible():
     """
     It's good practice to fix randomness as much as possible during the development of neural networks to be able to
     compare changes to the network with previous states. This isn't entirely possible because some parallel operations
@@ -30,11 +30,11 @@ def makeDeterministicAsPossible():
     torch.cuda.manual_seed_all(0)
 
 
-def deterministicInitFn(worker_id: Any):
+def deterministic_init_function(worker_id: Any):
     np.random.seed(int(0))
 
 
-def getModel(model_config: dict) -> PoseGraphPredictionNet:
+def get_model(model_config: dict) -> PoseGraphPredictionNet:
     return PoseGraphPredictionNet(model_config)
 
 
