@@ -9,16 +9,17 @@ from torch_geometric.data import Data
 from typing import List, Optional, Tuple, Union
 
 
-PoseSequenceType = List[List[Tuple[float, float, float]]]
+PoseType = List[Tuple[float, float, float]]
+PoseSequenceType = List[PoseType]
 
 
-def get_features_of_nodes(estimated_poses_sample: Union[PoseSequenceType, ndarray]) -> torch.FloatTensor:
-    number_of_joints = len(estimated_poses_sample[0])
+def get_features_of_nodes(estimated_pose: Union[PoseType, ndarray]) -> torch.FloatTensor:
+    number_of_joints = len(estimated_pose)
     mean_joint_id = number_of_joints / 2
 
     # Convert each joint from the latest time step to a node
     features_of_nodes = []
-    for joint_id, joint in enumerate(estimated_poses_sample[1]):
+    for joint_id, joint in enumerate(estimated_pose):
         # Normalize joint_id to range from -1 to 1
         normalized_joint_id = (joint_id - mean_joint_id) / mean_joint_id
         node_features = [normalized_joint_id, joint[0], joint[1], joint[2]]
@@ -62,7 +63,7 @@ def convert_samples_to_graph_data(estimated_poses_sample: Union[PoseSequenceType
     normalizer.normalize_pose_sequence(estimated_poses_sample)
     normalizer.normalize_pose_sequence(ground_truth_sample)
 
-    features_of_nodes = get_features_of_nodes(estimated_poses_sample)
+    features_of_nodes = get_features_of_nodes(estimated_poses_sample[1])
     features_of_edges = get_features_of_edges(estimated_poses_sample)
     node_ids_connected_by_edges = get_node_ids_connected_by_edges(estimated_poses_sample)
 
