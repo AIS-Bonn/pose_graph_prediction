@@ -110,7 +110,7 @@ class Human36MPoseGraphVisualizer(object):
 
     def visualize(self):
         sequential_visualizer = PoseGraphSequentialVisualizer()
-        sequential_visualizer.set_link_colors(COCO_COLORS)
+        sequential_visualizer.set_default_link_colors(COCO_COLORS)
         sequential_visualizer.set_graph_connections(self.connected_joint_pairs)
         sequential_visualizer.set_axes_limits(*self.compute_axes_limits())
         for pose in self.pose_sequence:
