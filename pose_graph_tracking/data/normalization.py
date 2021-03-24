@@ -24,6 +24,26 @@ class PoseSequenceNormalizer(object):
         self.offset = None
         self.scale_factor = None
         self.orientation_normalization_matrix = None
+
+    def set_normalization_parameters(self,
+                                     offset: np.ndarray,
+                                     scale_factor: float,
+                                     orientation_normalization_matrix: np.ndarray):
+        self.set_normalization_offset(offset)
+        self.set_normalization_scale_factor(scale_factor)
+        self.set_normalization_rotation_matrix(orientation_normalization_matrix)
+
+    def set_normalization_offset(self,
+                                 offset: np.ndarray):
+        self.offset = offset
+
+    def set_normalization_scale_factor(self,
+                                       scale_factor: float):
+        self.scale_factor = scale_factor
+
+    def set_normalization_rotation_matrix(self,
+                                          orientation_normalization_matrix: np.ndarray):
+        self.orientation_normalization_matrix = orientation_normalization_matrix
         self.are_normalization_parameters_computed = False
 
     def compute_normalization_parameters(self,
