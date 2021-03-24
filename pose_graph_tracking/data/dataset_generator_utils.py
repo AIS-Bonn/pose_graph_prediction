@@ -6,7 +6,7 @@ import torch
 
 from torch_geometric.data import Data
 
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 
 PoseSequenceType = List[List[Tuple[float, float, float]]]
@@ -52,7 +52,7 @@ def get_node_ids_connected_by_edges(estimated_poses_sample: Union[PoseSequenceTy
 
 def convert_samples_to_graph_data(estimated_poses_sample: Union[PoseSequenceType, ndarray],
                                   ground_truth_sample: Union[PoseSequenceType, ndarray],
-                                  action_id: int) -> Data:
+                                  action_id: Optional[int]) -> Data:
     if len(estimated_poses_sample) != 3:
         print("Data conversion is currently implemented just for a sample length of 3. Exiting.")
         exit(-1)
@@ -70,19 +70,17 @@ def convert_samples_to_graph_data(estimated_poses_sample: Union[PoseSequenceType
     # output
     ground_truth_node_positions = torch.FloatTensor(array(ground_truth_sample[-1]))
 
-    # TODO: Normalize when using this? - Remove later on
-    action_id_tensor = torch.IntTensor(array([action_id]))
-
     data = Data(x=features_of_nodes,
                 features_of_edges=features_of_edges,
                 node_indexes_connected_by_edges=node_ids_connected_by_edges,
                 # name within Data has to include 'index' in order for collate() to work properly..
-                action_id=action_id_tensor,
                 ground_truth=ground_truth_node_positions,
                 normalization_offset=torch.FloatTensor(normalizer.offset),
                 normalization_scale=torch.FloatTensor(array([normalizer.scale_factor])),
                 normalization_rotation_matrix=torch.FloatTensor(normalizer.orientation_normalization_matrix))
 
+    if action_id is not None:
+        data["action_id"] = torch.IntTensor(array([action_id]))
     return data
 
 
