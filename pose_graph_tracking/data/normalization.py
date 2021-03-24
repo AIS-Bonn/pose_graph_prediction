@@ -44,7 +44,6 @@ class PoseSequenceNormalizer(object):
     def set_normalization_rotation_matrix(self,
                                           orientation_normalization_matrix: np.ndarray):
         self.orientation_normalization_matrix = orientation_normalization_matrix
-        self.are_normalization_parameters_computed = False
 
     def compute_normalization_parameters(self,
                                          pose: Union[List[Tuple[float, float, float]], np.ndarray]):
@@ -58,39 +57,46 @@ class PoseSequenceNormalizer(object):
         self.offset = first_mid_hip_position
         self.scale_factor = person_height
         self.orientation_normalization_matrix = rotation_matrix_around_z_axis
-        self.are_normalization_parameters_computed = True
 
     def normalize_pose_sequence(self,
                                 pose_sequence: Union[List[List[Tuple[float, float, float]]], np.ndarray]):
         """
         Apply the computed normalization to the provided pose_sequence.
         """
-        if self.are_normalization_parameters_computed:
-            for frame_id, current_pose in enumerate(pose_sequence):
-                pose_centered_at_mid_hip = np.array(current_pose) - self.offset
-                pose_centered_at_mid_hip = pose_centered_at_mid_hip / self.scale_factor
-                normalized_pose = np.matmul(self.orientation_normalization_matrix,
-                                            pose_centered_at_mid_hip.transpose()).transpose()
-                pose_sequence[frame_id] = normalized_pose
-        else:
-            print("Normalization parameters were not computed. Normalization couldn\'t be applied to sequence.")
-            exit(-1)
+        for frame_id, current_pose in enumerate(pose_sequence):
+            pose_sequence[frame_id] = self.normalize_pose(current_pose)
+
+    def normalize_pose(self,
+                       pose: Union[List[Tuple[float, float, float]], np.ndarray]):
+        """
+        Apply the computed normalization to the provided pose.
+        """
+        self._assert_all_normalization_parameters_are_set()
+
+        pose_centered_at_mid_hip = np.array(pose) - self.offset
+        scaled_pose_centered_at_mid_hip = pose_centered_at_mid_hip / self.scale_factor
+        normalized_pose = np.matmul(self.orientation_normalization_matrix,
+                                    scaled_pose_centered_at_mid_hip.transpose()).transpose()
+        return normalized_pose
+
+    def _assert_all_normalization_parameters_are_set(self):
+        assert self.offset is not None, "Normalization offset is not set."
+        assert self.scale_factor is not None, "Normalization scale factor is not set."
+        assert self.orientation_normalization_matrix is not None, "Normalization orientation matrix is not set."
 
     def denormalize_pose(self,
                          pose: Union[List[Tuple[float, float, float]], np.ndarray]):
         """
-        Denormalize the provided pose. # TODO: change failure behaviour
+        Denormalize the provided pose.
         """
-        if self.are_normalization_parameters_computed:
-            normalized_pose = np.array(pose)
-            derotated_pose = np.matmul(invert_matrix(self.orientation_normalization_matrix),
-                                       normalized_pose.transpose()).transpose()
-            descaled_pose = derotated_pose * self.scale_factor
-            denormalized_pose = descaled_pose + self.offset
-            return denormalized_pose
-        else:
-            print("Normalization parameters were not computed. Denormalization couldn\'t be applied to pose.")
-            exit(-1)
+        self._assert_all_normalization_parameters_are_set()
+
+        normalized_pose = np.array(pose)
+        derotated_pose = np.matmul(invert_matrix(self.orientation_normalization_matrix),
+                                   normalized_pose.transpose()).transpose()
+        descaled_pose = derotated_pose * self.scale_factor
+        denormalized_pose = descaled_pose + self.offset
+        return denormalized_pose
 
     def _compute_normalization_rotation_matrix(self,
                                                reference_pose: Union[List[Tuple[float, float, float]], np.ndarray]
