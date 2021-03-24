@@ -27,17 +27,13 @@ class PoseSequenceNormalizer(object):
         self.are_normalization_parameters_computed = False
 
     def compute_normalization_parameters(self,
-                                         pose_sequence: Union[List[List[Tuple[float, float, float]]], np.ndarray]):
+                                         pose: Union[List[Tuple[float, float, float]], np.ndarray]):
         """
-        Compute the normalization parameters wrt. the pose_sequence and save them in the member variables.
+        Compute the normalization parameters wrt. the pose and save them in the member variables.
         """
-        if len(pose_sequence) == 0:
-            print("Sequence does not contain any poses.")
-            exit(-1)
-
-        first_mid_hip_position = np.array(pose_sequence[0][0])
-        person_height = self._estimate_person_height(pose_sequence[0])
-        rotation_matrix_around_z_axis = self._compute_normalization_rotation_matrix(pose_sequence[0])
+        first_mid_hip_position = np.array(pose[0])
+        person_height = self._estimate_person_height(pose)
+        rotation_matrix_around_z_axis = self._compute_normalization_rotation_matrix(pose)
 
         self.offset = first_mid_hip_position
         self.scale_factor = person_height

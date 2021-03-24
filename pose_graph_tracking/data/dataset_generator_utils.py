@@ -58,7 +58,7 @@ def convert_samples_to_graph_data(estimated_poses_sample: Union[PoseSequenceType
         exit(-1)
 
     normalizer = PoseSequenceNormalizer()
-    normalizer.compute_normalization_parameters(estimated_poses_sample)
+    normalizer.compute_normalization_parameters(estimated_poses_sample[0])
     normalizer.normalize_pose_sequence(estimated_poses_sample)
     normalizer.normalize_pose_sequence(ground_truth_sample)
 
