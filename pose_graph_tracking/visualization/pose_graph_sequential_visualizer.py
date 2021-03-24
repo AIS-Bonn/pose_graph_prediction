@@ -29,8 +29,9 @@ class PoseGraphSequentialVisualizer(StoppableSequentialVisualizer):
         visualizer.provide_pose_with_color(pose, [255, 0, 0])
         visualizer.draw_provided_poses()
     """
-    def __init__(self):
-        super(PoseGraphSequentialVisualizer, self).__init__()
+    def __init__(self,
+                 start_paused: bool = False):
+        super(PoseGraphSequentialVisualizer, self).__init__(start_paused=start_paused)
 
         self.colored_poses_to_visualize = []
 

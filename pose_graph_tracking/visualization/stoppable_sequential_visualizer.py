@@ -18,8 +18,9 @@ class StoppableSequentialVisualizer(object):
     Calling the update_plot method updates the visualization.
     """
     def __init__(self,
+                 start_paused: bool = False,
                  window_title: str = "Sequential Visualization"):
-        self.is_requested_to_pause = False
+        self.is_requested_to_pause = start_paused
         self.is_next_frame_requested = False
 
         # Activate interactive mode for plots
