@@ -2,5 +2,5 @@
   "batch_size": 50,
   "learning_rate": 0.001,
   "number_of_epochs": 2000000,
-  "try_to_train_on_gpu": false
+  "try_to_train_on_gpu": true
 }
