@@ -23,7 +23,8 @@ class Human36MDataset(InMemoryDataset):
                  data_save_directory: str,
                  path_to_data_root_directory: str = PATH_TO_DATA_DIRECTORY + 'original/',
                  ids_of_subjects_to_load: Union[List[int], None] = None,
-                 sample_sequence_length: int = 3):
+                 sample_sequence_length: int = 3,
+                 transform_method: Optional[Callable] = None):
         self.graphs_filenames = None
 
         # Making sure path ends with a separator
@@ -42,7 +43,7 @@ class Human36MDataset(InMemoryDataset):
                 self.dataset_description = load_json_file(json_file)
 
         super(Human36MDataset, self).__init__(self.data_save_directory,
-                                              transform=None,
+                                              transform=transform_method,
                                               pre_transform=None)
         self.data, self.slices = torch.load(self.processed_paths[0])
 
