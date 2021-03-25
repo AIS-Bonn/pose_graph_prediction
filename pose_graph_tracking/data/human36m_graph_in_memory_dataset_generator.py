@@ -11,11 +11,11 @@ from pose_graph_tracking.helpers.defaults import PATH_TO_DATA_DIRECTORY
 
 import torch
 
-from torch_geometric.data import InMemoryDataset
+from torch_geometric.data import Data, InMemoryDataset
 
 from tqdm import tqdm
 
-from typing import List, Union
+from typing import Callable, List, Optional, Union
 
 
 class Human36MDataset(InMemoryDataset):
@@ -68,20 +68,34 @@ class Human36MDataset(InMemoryDataset):
 
             last_start_index_for_sampling = len(sequence["estimated_poses"]) - self.sample_sequence_lenght + 1
             for frame in range(last_start_index_for_sampling):
-                estimated_poses_sample = copy(sequence["estimated_poses"][frame: frame + self.sample_sequence_lenght])
-                ground_truth_sample = copy(sequence["ground_truth_poses"][frame: frame + self.sample_sequence_lenght])
-
-                data = convert_samples_to_graph_data(estimated_poses_sample,
-                                                     ground_truth_sample,
-                                                     sequence["action_id"])
-                data_list.append(data)
+                self._process_sample(sequence, frame, data_list)
                 i += 1
 
-        dataset_description = {"number_of_samples": i,
+        self._save_dataset_description_to_file(i)
+
+        data, slices = self.collate(data_list)
+        torch.save((data, slices), self.processed_paths[0])
+
+    def _save_dataset_description_to_file(self,
+                                          number_of_samples: int):
+        dataset_description = {"number_of_samples": number_of_samples,
                                "frames_in_a_sample": self.sample_sequence_lenght,
                                "subject_ids": self.ids_of_subjects_to_load}
         with open(self.path_to_dataset_description_file, "w") as outfile:
             save_json_file(dataset_description, outfile, indent=2)
 
-        data, slices = self.collate(data_list)
-        torch.save((data, slices), self.processed_paths[0])
+    def _process_sample(self,
+                        sequence,
+                        start_frame_id: int,
+                        data_list: List[Data]):
+        print("process sample of super ")
+        exit()
+        estimated_poses_sample = copy(sequence["estimated_poses"][start_frame_id:
+                                                                  start_frame_id + self.sample_sequence_lenght])
+        ground_truth_sample = copy(sequence["ground_truth_poses"][start_frame_id:
+                                                                  start_frame_id + self.sample_sequence_lenght])
+
+        data = convert_samples_to_graph_data(estimated_poses_sample,
+                                             ground_truth_sample,
+                                             sequence["action_id"])
+        data_list.append(data)
