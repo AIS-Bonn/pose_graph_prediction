@@ -24,7 +24,9 @@ class AugmentingHuman36MDataset(Human36MDataset):
                  data_save_directory: str,
                  path_to_data_root_directory: str = PATH_TO_DATA_DIRECTORY + 'original/',
                  ids_of_subjects_to_load: Union[List[int], None] = None,
-                 sample_sequence_length: int = 3):
+                 sample_sequence_length: int = 3,
+                 percentage_of_link_length_as_noise_limit: float = 0.05):
+        self.percentage_of_link_length_as_noise_limit = percentage_of_link_length_as_noise_limit
         super(AugmentingHuman36MDataset, self).__init__(data_save_directory,
                                                         path_to_data_root_directory,
                                                         ids_of_subjects_to_load,
@@ -109,11 +111,10 @@ class AugmentingHuman36MDataset(Human36MDataset):
         lower_back_id = 7
         amount_of_noise_per_link[0] = torch.dist(current_pose[mid_hip_id], current_pose[lower_back_id], 2).item()
 
-        # TODO: compute 3D noise per joint from amount_of_noise_per_link * a factor like 0.1
         noise = torch.zeros_like(current_pose)
-        percent_noise_wrt_link_lenght = 0.1
         for joint_id in range(len(amount_of_noise_per_link)):
             noise_between_minus_one_and_one = torch.rand(3) * 2 - 1
-            noise[joint_id] = noise_between_minus_one_and_one * amount_of_noise_per_link[joint_id] * percent_noise_wrt_link_lenght
+            noise[joint_id] = noise_between_minus_one_and_one * \
+                              amount_of_noise_per_link[joint_id] * self.percentage_of_link_length_as_noise_limit
 
         return noise
