@@ -221,8 +221,8 @@ class Trainer(object):
 
     def _save_results_statistics_to_file(self,
                                          results: List[List[float]]):
-        training_loss_statistics = self._compute_statistics(results[:, 1])
-        test_loss_statistics = self._compute_statistics(results[:, 2])
+        training_loss_statistics = self._compute_statistics(array(results)[:, 1])
+        test_loss_statistics = self._compute_statistics(array(results)[:, 2])
 
         with open(MODEL_DIRECTORY + "training_loss_statistics", "w") as outfile:
             save_json_file(training_loss_statistics, outfile, indent=2)
@@ -230,7 +230,7 @@ class Trainer(object):
             save_json_file(test_loss_statistics, outfile, indent=2)
 
     def _compute_statistics(self,
-                            losses_list: List[List[float]]) -> dict:
+                            losses_list: List[float]) -> dict:
         losses_list = array(losses_list)
         min_loss = amin(losses_list)
         index_of_min_loss = where(losses_list == min_loss)[0].item()
