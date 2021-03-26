@@ -242,6 +242,7 @@ class Trainer(object):
         max_after_min_loss = amax(losses_list[index_of_min_loss:])
         last_loss = losses_list[-1]
         return {"min_loss": min_loss,
+                "model_id_with_lowest_loss": index_of_min_loss,
                 "global_max_loss": global_max_loss,
                 "max_loss_after_min_loss": max_after_min_loss,
                 "last_loss": last_loss}
