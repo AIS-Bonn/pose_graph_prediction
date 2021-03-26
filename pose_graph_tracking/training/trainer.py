@@ -222,12 +222,14 @@ class Trainer(object):
                                ground_truth: ndarray,
                                data: Data):
         """
+        # TODO: implement
         Visualizes the results of the model.
 
         :param model_result: Result of the model.
         :param ground_truth: Ground truth.
         :param data: Original data sample provided to the model.
         """
-        self.visualization_function(model_result,
-                                    ground_truth,
-                                    data)
+        raise NotImplementedError
+        # self.visualization_function(model_result,
+        #                             ground_truth,
+        #                             data)
