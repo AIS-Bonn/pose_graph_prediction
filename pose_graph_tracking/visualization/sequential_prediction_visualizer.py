@@ -18,7 +18,8 @@ from pose_graph_tracking.visualization.pose_graph_sequential_visualizer import P
 class SequentialPredictionVisualizer(object):
     def visualize_model(self,
                         model: PoseGraphPredictionNet,
-                        data_set: Dataset):
+                        data_set: Dataset,
+                        use_output_as_next_input: bool = True):
         """
         Provides the data sequentially to the model and visualizes the results after each step.
 
@@ -80,5 +81,6 @@ class SequentialPredictionVisualizer(object):
 
             # Prepare next iteration
             visualized_frames_counter += 1
-            previous_pose = denormalized_current_pose
-            current_pose = denormalized_predicted_next_pose
+            if use_output_as_next_input:
+                previous_pose = denormalized_current_pose
+                current_pose = denormalized_predicted_next_pose
