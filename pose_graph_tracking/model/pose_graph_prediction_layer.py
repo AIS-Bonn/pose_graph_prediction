@@ -2,7 +2,7 @@ from pose_graph_tracking.model.utils import get_activation_function_from_type
 
 import torch
 
-from torch.nn import Dropout, Module, Sequential, Linear as Lin, LayerNorm
+from torch.nn import Dropout, LayerNorm, Linear as Lin, Module, Sequential, Sigmoid
 
 from torch_scatter import scatter_add
 
@@ -42,6 +42,8 @@ class PoseGraphPredictionLayer(Module):
 
         dropout_probability = model_config["dropout_probability"]
 
+        use_attention = model_config["use_attention"]
+
         number_of_features_per_edge = model_config["edge_encoder_parameters"]["number_of_output_channels"]
         number_of_features_per_node = model_config["node_encoder_parameters"]["number_of_output_channels"]
         number_of_global_features = model_config["pose_graph_prediction_layer_parameters"]["number_of_global_features"]
@@ -62,6 +64,16 @@ class PoseGraphPredictionLayer(Module):
                 """
                 super(EdgeModel, self).__init__()
 
+                self.edge_mlp = self.generate_edge_mlp()
+                if use_attention:
+                    self.edge_attention_mlp = self.generate_edge_mlp(generate_attention_mlp=True)
+
+            def generate_edge_mlp(self,
+                                  generate_attention_mlp: bool = False) -> Sequential:
+                mlp_name = "edge_mlp"
+                if generate_attention_mlp:
+                    mlp_name = "attention_" + mlp_name
+
                 number_of_input_channels = number_of_features_per_node * 2 + \
                                            number_of_features_per_edge + \
                                            number_of_global_features
@@ -69,21 +81,24 @@ class PoseGraphPredictionLayer(Module):
                 number_of_output_channels = edge_mlp_parameters["number_of_output_channels"]
                 number_of_hidden_layers = edge_mlp_parameters["number_of_hidden_layers"]
 
-                self.edge_mlp = Sequential()
-                self.edge_mlp.add_module("edge_mlp_input_layer",
-                                         Lin(number_of_input_channels, number_of_hidden_channels))
+                edge_mlp = Sequential()
+                edge_mlp.add_module(mlp_name + "input_layer",
+                                    Lin(number_of_input_channels, number_of_hidden_channels))
 
                 for layer_id in range(number_of_hidden_layers):
-                    self.edge_mlp.add_module("edge_mlp_activation_function_" + str(layer_id), activation_function())
-                    self.edge_mlp.add_module("edge_mlp_hidden_dropout_" + str(layer_id), Dropout(dropout_probability))
-                    self.edge_mlp.add_module("edge_mlp_hidden_layer_" + str(layer_id),
+                    edge_mlp.add_module(mlp_name + "activation_function_" + str(layer_id), activation_function())
+                    edge_mlp.add_module(mlp_name + "hidden_dropout_" + str(layer_id), Dropout(dropout_probability))
+                    edge_mlp.add_module(mlp_name + "hidden_layer_" + str(layer_id),
                                              Lin(number_of_hidden_channels, number_of_hidden_channels))
 
-                self.edge_mlp.add_module("edge_mlp_output_activation_function", activation_function())
-                self.edge_mlp.add_module("edge_mlp_output_dropout", Dropout(dropout_probability))
-                self.edge_mlp.add_module("edge_mlp_output", Lin(number_of_hidden_channels, number_of_output_channels))
-                self.edge_mlp.add_module("edge_mlp_layer_norm", LayerNorm(number_of_output_channels))
-                self.edge_mlp.apply(init_weights)
+                edge_mlp.add_module(mlp_name + "output_activation_function", activation_function())
+                edge_mlp.add_module(mlp_name + "output_dropout", Dropout(dropout_probability))
+                edge_mlp.add_module(mlp_name + "output", Lin(number_of_hidden_channels, number_of_output_channels))
+                edge_mlp.add_module(mlp_name + "layer_norm", LayerNorm(number_of_output_channels))
+                if generate_attention_mlp:
+                    edge_mlp.add_module(mlp_name + "output_sigmoid", Sigmoid())
+                edge_mlp.apply(init_weights)
+                return edge_mlp
 
             def forward(self,
                         features_of_source_nodes: torch.Tensor,
@@ -142,12 +157,19 @@ class PoseGraphPredictionLayer(Module):
                     edge_neighborhoods = torch.cat([features_of_source_nodes,
                                                     features_of_target_nodes,
                                                     features_of_edges], 1)
+                    resulting_edges = self.edge_mlp(edge_neighborhoods)
                 else:
                     edge_neighborhoods = torch.cat([features_of_source_nodes,
                                                     features_of_target_nodes,
                                                     features_of_edges,
                                                     global_features[batch_ids]], 1)
-                return self.edge_mlp(edge_neighborhoods)
+                    resulting_edges = self.edge_mlp(edge_neighborhoods)
+
+                if use_attention:
+                    attentions_per_edge = self.edge_attention_mlp(edge_neighborhoods)
+                    resulting_edges = resulting_edges * attentions_per_edge
+
+                return resulting_edges
 
         class NodeModel(Module):
             def __init__(self):

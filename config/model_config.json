@@ -1,6 +1,7 @@
 {
   "activation_type": "relu",
   "dropout_probability": 0.5,
+  "use_attention": true,
   "edge_encoder_parameters": {
     "number_of_input_channels": 3,
     "number_of_hidden_channels": 50,
