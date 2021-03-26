@@ -131,11 +131,8 @@ class Trainer(object):
             # Compute loss on test set after this epoch of training
             test_loss = self.test()
 
-            # Save all resulting loss history in a file
             results.append([epoch, train_loss, test_loss])
-            f = open(MODEL_DIRECTORY + "results", 'wb')
-            dump(results, f)
-            f.close()
+            self._save_results_to_file(results)
 
             # Save model and print results
             if epoch % 1 == 0:
@@ -212,6 +209,12 @@ class Trainer(object):
                                         data)
 
         return loss
+
+    def _save_results_to_file(self,
+                              results: List[List[float]]):
+        f = open(MODEL_DIRECTORY + "results", 'wb')
+        dump(results, f)
+        f.close()
 
     def save_model(self,
                    model_id: str):
