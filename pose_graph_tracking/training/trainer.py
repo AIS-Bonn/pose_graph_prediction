@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from numpy import mean, ndarray
+from json import dump as save_json_file
+
+from numpy import array, amax, amin, mean, ndarray, where
 
 from os import makedirs
 from os.path import exists
@@ -17,7 +19,7 @@ from torch_geometric.nn import DataParallel
 from pose_graph_tracking.helpers.utils import deterministic_init_function
 from pose_graph_tracking.helpers.defaults import MODEL_DIRECTORY, MODEL_NAME_PREFIX
 
-from typing import Callable, Union
+from typing import Callable, List, Union
 
 
 class Trainer(object):
@@ -133,6 +135,7 @@ class Trainer(object):
 
             results.append([epoch, train_loss, test_loss])
             self._save_results_to_file(results)
+            self._save_results_statistics_to_file(results)
 
             # Save model and print results
             if epoch % 1 == 0:
@@ -215,6 +218,33 @@ class Trainer(object):
         f = open(MODEL_DIRECTORY + "results", 'wb')
         dump(results, f)
         f.close()
+
+    def _save_results_statistics_to_file(self,
+                                         results: List[List[float]]):
+        training_loss_statistics = self._compute_statistics(results[:, 1])
+        test_loss_statistics = self._compute_statistics(results[:, 2])
+
+        with open(MODEL_DIRECTORY + "training_loss_statistics", "w") as outfile:
+            save_json_file(training_loss_statistics, outfile, indent=2)
+        with open(MODEL_DIRECTORY + "test_loss_statistics", "w") as outfile:
+            save_json_file(test_loss_statistics, outfile, indent=2)
+
+    def _compute_statistics(self,
+                            losses_list: List[List[float]]) -> dict:
+        losses_list = array(losses_list)
+        min_loss = amin(losses_list)
+        index_of_min_loss = where(losses_list == min_loss)[0].item()
+        if losses_list[index_of_min_loss] != min_loss:
+            print("Index of min loss points to loss of ", losses_list[index_of_min_loss])
+            print("But min loss is ", min_loss)
+
+        global_max_loss = amax(losses_list)
+        max_after_min_loss = amax(losses_list[index_of_min_loss:])
+        last_loss = losses_list[-1]
+        return {"min_loss": min_loss,
+                "global_max_loss": global_max_loss,
+                "max_loss_after_min_loss": max_after_min_loss,
+                "last_loss": last_loss}
 
     def save_model(self,
                    model_id: str):
