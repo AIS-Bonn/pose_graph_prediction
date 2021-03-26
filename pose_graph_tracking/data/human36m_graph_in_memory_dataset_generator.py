@@ -89,8 +89,6 @@ class Human36MDataset(InMemoryDataset):
                         sequence,
                         start_frame_id: int,
                         data_list: List[Data]):
-        print("process sample of super ")
-        exit()
         estimated_poses_sample = copy(sequence["estimated_poses"][start_frame_id:
                                                                   start_frame_id + self.sample_sequence_lenght])
         ground_truth_sample = copy(sequence["ground_truth_poses"][start_frame_id:
