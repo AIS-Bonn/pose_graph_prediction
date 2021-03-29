@@ -79,7 +79,8 @@ class AugmentingHuman36MDataset(Human36MDataset):
         TODO: add docs
         """
         previous_pose = input_data.previous_pose
-        current_pose = input_data.current_pose
+        # Clone data to prevent accumulation if noise, because noise is applied in place
+        current_pose = input_data.current_pose.clone()
         ground_truth_pose = input_data.ground_truth_pose
 
         self._apply_noise_to_current_pose(current_pose)
