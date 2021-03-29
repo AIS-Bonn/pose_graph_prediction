@@ -40,6 +40,7 @@ class PoseGraphPredictionLayer(Module):
         activation_type = model_config["activation_type"]
         activation_function = get_activation_function_from_type(model_config["activation_type"])
 
+        attention_dropout_probability = model_config["attention_dropout_probability"]
         dropout_probability = model_config["dropout_probability"]
 
         use_attention = model_config["use_attention"]
@@ -64,11 +65,13 @@ class PoseGraphPredictionLayer(Module):
                 """
                 super(EdgeModel, self).__init__()
 
-                self.edge_mlp = self.generate_edge_mlp()
+                self.edge_mlp = self.generate_edge_mlp(dropout_probability=dropout_probability)
                 if use_attention:
-                    self.edge_attention_mlp = self.generate_edge_mlp(generate_attention_mlp=True)
+                    self.edge_attention_mlp = self.generate_edge_mlp(dropout_probability=attention_dropout_probability,
+                                                                     generate_attention_mlp=True)
 
             def generate_edge_mlp(self,
+                                  dropout_probability: float,
                                   generate_attention_mlp: bool = False) -> Sequential:
                 mlp_name = "edge_mlp"
                 if generate_attention_mlp:
