@@ -1,8 +1,4 @@
-from json import load as load_json_file, dump as save_json_file
-
 from numpy import array, copy
-
-from os.path import exists, join
 
 from pose_graph_tracking.data.dataset_generator_utils import convert_poses_to_graph_data
 from pose_graph_tracking.data.human36m_graph_in_memory_dataset_generator import Human36MDataLoader, Human36MDataset
