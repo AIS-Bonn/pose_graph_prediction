@@ -34,7 +34,7 @@ class AugmentingHuman36MDataset(Human36MDataset):
                                                         self._transform_data)
 
     def process(self):
-        i = 0
+        sample_counter = 0
         data_loader = Human36MDataLoader(self.path_to_data_root_directory,
                                          self.ids_of_subjects_to_load)
 
@@ -48,9 +48,9 @@ class AugmentingHuman36MDataset(Human36MDataset):
             last_start_index_for_sampling = len(sequence["estimated_poses"]) - self.sample_sequence_lenght + 1
             for frame in range(last_start_index_for_sampling):
                 self._process_sample(sequence, frame, data_list)
-                i += 1
+                sample_counter += 1
 
-        self._save_dataset_description_to_file(i)
+        self._save_dataset_description_to_file(sample_counter)
 
         data, slices = self.collate(data_list)
         torch.save((data, slices), self.processed_paths[0])
