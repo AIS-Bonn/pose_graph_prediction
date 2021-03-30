@@ -1,11 +1,11 @@
 import torch
 
-from torch.nn import Module, ReLU
+from torch.nn import Module
 
 from torch_geometric.data import Data
 
 from pose_graph_tracking.model.pose_graph_prediction_layer import PoseGraphPredictionLayer
-from pose_graph_tracking.model.utils import get_activation_function_from_type, generate_encoder, generate_decoder
+from pose_graph_tracking.model.utils import generate_encoder, generate_decoder
 
 
 class PoseGraphPredictionNet(Module):
@@ -22,17 +22,19 @@ class PoseGraphPredictionNet(Module):
         super(PoseGraphPredictionNet, self).__init__()
 
         # Default parameters
-        self.activation_function = ReLU
         self.dropout_probability = 0.5
-        self.edge_encoder_parameters = {"number_of_input_channels": 5,
+        self.edge_encoder_parameters = {"activation_type": "relu",
+                                        "number_of_input_channels": 5,
                                         "number_of_hidden_channels": 50,
                                         "number_of_output_channels": 20,
                                         "number_of_hidden_layers": 3}
-        self.node_encoder_parameters = {"number_of_input_channels": 4,
+        self.node_encoder_parameters = {"activation_type": "relu",
+                                        "number_of_input_channels": 4,
                                         "number_of_hidden_channels": 50,
                                         "number_of_output_channels": 20,
                                         "number_of_hidden_layers": 3}
-        self.node_decoder_parameters = {"number_of_input_channels": 20,
+        self.node_decoder_parameters = {"activation_type": "relu",
+                                        "number_of_input_channels": 20,
                                         "number_of_hidden_channels": 50,
                                         "number_of_output_channels": 3,
                                         "number_of_hidden_layers": 3}
@@ -43,13 +45,13 @@ class PoseGraphPredictionNet(Module):
         self.edge_features_encoder = generate_encoder(self.edge_encoder_parameters["number_of_input_channels"],
                                                       self.edge_encoder_parameters["number_of_hidden_channels"],
                                                       self.edge_encoder_parameters["number_of_output_channels"],
-                                                      self.activation_function,
+                                                      self.edge_encoder_parameters["activation_type"],
                                                       dropout_prob_encoders,
                                                       self.edge_encoder_parameters["number_of_hidden_layers"])
         self.node_features_encoder = generate_encoder(self.node_encoder_parameters["number_of_input_channels"],
                                                       self.node_encoder_parameters["number_of_hidden_channels"],
                                                       self.node_encoder_parameters["number_of_output_channels"],
-                                                      self.activation_function,
+                                                      self.node_encoder_parameters["activation_type"],
                                                       dropout_prob_encoders,
                                                       self.node_encoder_parameters["number_of_hidden_layers"])
 
@@ -61,13 +63,12 @@ class PoseGraphPredictionNet(Module):
         self.node_decoder = generate_decoder(self.node_decoder_parameters["number_of_input_channels"],
                                              self.node_decoder_parameters["number_of_hidden_channels"],
                                              self.node_decoder_parameters["number_of_output_channels"],
-                                             self.activation_function,
+                                             self.node_decoder_parameters["activation_type"],
                                              dropout_prob_decoder,
                                              self.node_decoder_parameters["number_of_hidden_layers"])
 
     def _get_parameters_from_config(self,
                                     model_config: dict):
-        self.activation_function = get_activation_function_from_type(model_config["activation_type"])
         self.dropout_probability = model_config.get("dropout_probability", self.dropout_probability)
         self._get_mlp_parameters(self.edge_encoder_parameters, model_config["edge_encoder_parameters"])
         self._get_mlp_parameters(self.node_encoder_parameters, model_config["node_encoder_parameters"])
@@ -76,6 +77,9 @@ class PoseGraphPredictionNet(Module):
     def _get_mlp_parameters(self,
                             mlp_parameters: dict,
                             config: dict):
+        mlp_parameters["activation_type"] = config.get("activation_type",
+                                                       mlp_parameters[
+                                                           "activation_type"])
         mlp_parameters["number_of_input_channels"] = config.get("number_of_input_channels",
                                                                 mlp_parameters[
                                                                     "number_of_input_channels"])

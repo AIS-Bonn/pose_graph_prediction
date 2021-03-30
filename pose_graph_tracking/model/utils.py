@@ -54,7 +54,7 @@ def init_weights(module: Module,
 def generate_encoder(number_of_input_channels: int,
                      number_of_hidden_channels: int,
                      number_of_output_channels: int,
-                     activation_function: Module,
+                     activation_type: str,
                      dropout_probability: float = 0.5,
                      number_of_hidden_layers: int = 1) -> torch.nn.Sequential:
     """
@@ -77,7 +77,7 @@ def generate_encoder(number_of_input_channels: int,
     :param number_of_input_channels: Number of input features/channels.
     :param number_of_hidden_channels: Number of hidden features/channels.
     :param number_of_output_channels: Number of output features/channels.
-    :param activation_function: Activation function.
+    :param activation_type: Name of activation function.
     :param dropout_probability: Probability for dropout.
     :param number_of_hidden_layers: Number of hidden layers used for the encoder.
     :return: Returns the generated encoder.
@@ -86,6 +86,8 @@ def generate_encoder(number_of_input_channels: int,
     assert number_of_hidden_channels > 0, "Number of hidden channels for encoder must be a positive int."
     assert number_of_output_channels > 0, "Number of output channels for encoder must be a positive int."
     assert number_of_hidden_layers >= 0, "Number of hidden layers for encoder must be a positive int or zero."
+
+    activation_function = get_activation_function_from_type(activation_type)
 
     sequential = torch.nn.Sequential()
     sequential.add_module("encoder_input_layer", Lin(number_of_input_channels, number_of_hidden_channels))
@@ -107,7 +109,7 @@ def generate_encoder(number_of_input_channels: int,
 def generate_decoder(number_of_input_channels: int,
                      number_of_hidden_channels: int,
                      number_of_output_channels: int,
-                     activation_function: Module,
+                     activation_type: str,
                      dropout_probability: float = 0.5,
                      number_of_hidden_layers: int = 1) -> torch.nn.Sequential:
     """
@@ -129,7 +131,7 @@ def generate_decoder(number_of_input_channels: int,
     :param number_of_input_channels: Number of input features/channels.
     :param number_of_hidden_channels: Number of hidden features/channels.
     :param number_of_output_channels: Number of output features/channels.
-    :param activation_function: Activation function.
+    :param activation_type: Name of activation function.
     :param dropout_probability: Probability for dropout.
     :param number_of_hidden_layers: Number of hidden layers used for the decoder.
     :return: Returns the generated decoder.
@@ -138,6 +140,8 @@ def generate_decoder(number_of_input_channels: int,
     assert number_of_hidden_channels > 0, "Number of hidden channels for decoder must be a positive int."
     assert number_of_output_channels > 0, "Number of output channels for decoder must be a positive int."
     assert number_of_hidden_layers >= 0, "Number of hidden layers for decoder must be a positive int or zero."
+
+    activation_function = get_activation_function_from_type(activation_type)
 
     sequential = torch.nn.Sequential()
     sequential.add_module("decoder_input", Lin(number_of_input_channels, number_of_hidden_channels))

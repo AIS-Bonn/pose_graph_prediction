@@ -1,21 +1,23 @@
 {
-  "activation_type": "relu",
   "attention_dropout_probability": 0.1,
   "dropout_probability": 0.5,
   "use_attention": true,
   "edge_encoder_parameters": {
+    "activation_type": "relu",
     "number_of_input_channels": 3,
     "number_of_hidden_channels": 50,
     "number_of_output_channels": 20,
     "number_of_hidden_layers": 3
   },
   "node_encoder_parameters": {
+    "activation_type": "relu",
     "number_of_input_channels": 4,
     "number_of_hidden_channels": 50,
     "number_of_output_channels": 20,
     "number_of_hidden_layers": 3
   },
   "pose_graph_prediction_layer_parameters": {
+    "activation_type": "relu",
     "number_of_global_features": 0,
     "edge_mlp_parameters": {
       "number_of_hidden_channels": 50,
@@ -29,6 +31,7 @@
     }
   },
   "node_decoder_parameters": {
+    "activation_type": "relu",
     "number_of_input_channels": 20,
     "number_of_hidden_channels": 50,
     "number_of_output_channels": 3,

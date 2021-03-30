@@ -37,8 +37,8 @@ class PoseGraphPredictionLayer(Module):
         """
         super(PoseGraphPredictionLayer, self).__init__()
 
-        activation_type = model_config["activation_type"]
-        activation_function = get_activation_function_from_type(model_config["activation_type"])
+        activation_type = model_config["pose_graph_prediction_layer_parameters"]["activation_type"]
+        activation_function = get_activation_function_from_type(activation_type)
 
         attention_dropout_probability = model_config["attention_dropout_probability"]
         dropout_probability = model_config["dropout_probability"]
