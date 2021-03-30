@@ -91,23 +91,29 @@ class AugmentingHuman36MDataset(Human36MDataset):
 
     def _compute_noise_tensor(self,
                               current_pose: torch.Tensor) -> torch.Tensor:
-        amount_of_noise_per_link = [0]
+
+        link_lengths_per_joint = self.compute_preceding_link_lengths_per_joints(current_pose)
+
+        noise = torch.zeros_like(current_pose)
+        for joint_id in range(len(link_lengths_per_joint)):
+            random_values_between_minus_one_and_one = torch.rand(3) * 2 - 1
+            noise[joint_id] = random_values_between_minus_one_and_one * \
+                              link_lengths_per_joint[joint_id] * self.percentage_of_link_length_as_noise_limit
+
+        return noise
+
+    def compute_preceding_link_lengths_per_joints(self,
+                                                  current_pose: torch.Tensor) -> List[float]:
+        # Noise for root joint (mid hip) has to be computed separately, because mid hip is never target_joint_id
+        mid_hip_id = 0
+        lower_back_id = 7
+        length_root_to_lower_back_joint = torch.dist(current_pose[mid_hip_id], current_pose[lower_back_id], 2).item()
+
+        link_lengths_per_joint = [length_root_to_lower_back_joint]
         for joint_id_pairs_per_link in CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH:
             source_joint_id = joint_id_pairs_per_link[0]
             target_joint_id = joint_id_pairs_per_link[1]
 
             distance = torch.dist(current_pose[source_joint_id], current_pose[target_joint_id], 2).item()
-            amount_of_noise_per_link.append(distance)
-
-        # Noise for mid hip has to be computed separately because mid hip is never target_joint_id
-        mid_hip_id = 0
-        lower_back_id = 7
-        amount_of_noise_per_link[0] = torch.dist(current_pose[mid_hip_id], current_pose[lower_back_id], 2).item()
-
-        noise = torch.zeros_like(current_pose)
-        for joint_id in range(len(amount_of_noise_per_link)):
-            noise_between_minus_one_and_one = torch.rand(3) * 2 - 1
-            noise[joint_id] = noise_between_minus_one_and_one * \
-                              amount_of_noise_per_link[joint_id] * self.percentage_of_link_length_as_noise_limit
-
-        return noise
+            link_lengths_per_joint.append(distance)
+        return link_lengths_per_joint
