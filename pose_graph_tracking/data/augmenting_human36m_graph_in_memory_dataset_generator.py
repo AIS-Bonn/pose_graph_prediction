@@ -67,10 +67,6 @@ class AugmentingHuman36MDataset(Human36MDataset):
         data = Data(previous_pose=torch.FloatTensor(array(previous_pose)),
                     current_pose=torch.FloatTensor(array(current_pose)),
                     ground_truth_pose=torch.FloatTensor(array(ground_truth_pose)))
-
-        if False:
-            data["action_id"] = torch.IntTensor(array([sequence["action_id"]]))
-
         data_list.append(data)
 
     def _transform_data(self,
@@ -78,17 +74,13 @@ class AugmentingHuman36MDataset(Human36MDataset):
         """
         TODO: add docs
         """
-        previous_pose = input_data.previous_pose
         # Clone data to prevent accumulation if noise, because noise is applied in place
         current_pose = input_data.current_pose.clone()
-        ground_truth_pose = input_data.ground_truth_pose
-
         self._apply_noise_to_current_pose(current_pose)
 
-        data = convert_poses_to_graph_data(previous_pose,
+        data = convert_poses_to_graph_data(input_data.previous_pose,
                                            current_pose,
-                                           ground_truth_pose)
-
+                                           input_data.ground_truth_pose)
         return data
 
     def _apply_noise_to_current_pose(self,
