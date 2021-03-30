@@ -16,6 +16,9 @@ from typing import List, Union
 
 
 class AugmentingHuman36MDataset(Human36MDataset):
+    """
+    Generates an in memory dataset that augments each requested data sample by applying noise to the joint positions.
+    """
     def __init__(self,
                  data_save_directory: str,
                  path_to_data_root_directory: str = PATH_TO_DATA_DIRECTORY + 'original/',
@@ -30,6 +33,11 @@ class AugmentingHuman36MDataset(Human36MDataset):
                                                         self._transform_data)
 
     def process(self):
+        """
+        Is being called if no dataset exists in the specified directory.
+        Loads the data and converts each sample sequence into graph data.
+        Saves the dataset in the specified directory.
+        """
         sample_counter = 0
         data_loader = Human36MDataLoader(self.path_to_data_root_directory,
                                          self.ids_of_subjects_to_load)
@@ -55,6 +63,13 @@ class AugmentingHuman36MDataset(Human36MDataset):
                         sequence,
                         start_frame_id: int,
                         data_list: List[Data]):
+        """
+        Converts the necessary sequence sample into a Data object and appends it to the data_list.
+
+        :param sequence: Whole sequence containing all frames.
+        :param start_frame_id: The id of the first frame in the sequence sample.
+        :param data_list: List storing all converted data objects.
+        """
         previous_pose = copy(sequence["estimated_poses"][start_frame_id])
         current_pose = copy(sequence["estimated_poses"][start_frame_id + 1])
         last_frame_id_in_sample = start_frame_id + self.sample_sequence_lenght - 1
@@ -68,7 +83,7 @@ class AugmentingHuman36MDataset(Human36MDataset):
     def _transform_data(self,
                         input_data: Data) -> Data:
         """
-        TODO: add docs
+        Gets a sequence sample as a Data object, augments it by applying noise and converts it to graph data.
         """
         # Clone data to prevent accumulation if noise, because noise is applied in place
         current_pose = input_data.current_pose.clone()
@@ -87,7 +102,15 @@ class AugmentingHuman36MDataset(Human36MDataset):
 
     def _compute_noise_tensor(self,
                               current_pose: torch.Tensor) -> torch.Tensor:
+        """
+        Applies noise to each joint position.
+        The amount of noise depends on the length of the link to the preceding joint (the one closer to the root joint
+        in the pose graph) and a scaling factor.
+        For the root joint the length to the lower back joint is used.
 
+        :param current_pose: Joint positions.
+        :return: Noise per joint and axis.
+        """
         link_lengths_per_joint = self.compute_preceding_link_lengths_per_joints(current_pose)
 
         noise = torch.zeros_like(current_pose)
