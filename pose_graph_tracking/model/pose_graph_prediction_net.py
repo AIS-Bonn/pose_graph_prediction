@@ -69,25 +69,25 @@ class PoseGraphPredictionNet(Module):
                                     model_config: dict):
         self.activation_function = get_activation_function_from_type(model_config["activation_type"])
         self.dropout_probability = model_config.get("dropout_probability", self.dropout_probability)
-        self._get_encoder_decoder_parameters(self.edge_encoder_parameters, model_config["edge_encoder_parameters"])
-        self._get_encoder_decoder_parameters(self.node_encoder_parameters, model_config["node_encoder_parameters"])
-        self._get_encoder_decoder_parameters(self.node_decoder_parameters, model_config["node_decoder_parameters"])
+        self._get_mlp_parameters(self.edge_encoder_parameters, model_config["edge_encoder_parameters"])
+        self._get_mlp_parameters(self.node_encoder_parameters, model_config["node_encoder_parameters"])
+        self._get_mlp_parameters(self.node_decoder_parameters, model_config["node_decoder_parameters"])
 
-    def _get_encoder_decoder_parameters(self,
-                                        encoder_decoder_parameters: dict,
-                                        config: dict):
-        encoder_decoder_parameters["number_of_input_channels"] = config.get("number_of_input_channels",
-                                                                            encoder_decoder_parameters[
-                                                                                "number_of_input_channels"])
-        encoder_decoder_parameters["number_of_hidden_channels"] = config.get("number_of_hidden_channels",
-                                                                             encoder_decoder_parameters[
-                                                                                 "number_of_hidden_channels"])
-        encoder_decoder_parameters["number_of_output_channels"] = config.get("number_of_output_channels",
-                                                                             encoder_decoder_parameters[
-                                                                                 "number_of_output_channels"])
-        encoder_decoder_parameters["number_of_hidden_layers"] = config.get("number_of_hidden_layers",
-                                                                           encoder_decoder_parameters[
-                                                                               "number_of_hidden_layers"])
+    def _get_mlp_parameters(self,
+                            mlp_parameters: dict,
+                            config: dict):
+        mlp_parameters["number_of_input_channels"] = config.get("number_of_input_channels",
+                                                                mlp_parameters[
+                                                                    "number_of_input_channels"])
+        mlp_parameters["number_of_hidden_channels"] = config.get("number_of_hidden_channels",
+                                                                 mlp_parameters[
+                                                                     "number_of_hidden_channels"])
+        mlp_parameters["number_of_output_channels"] = config.get("number_of_output_channels",
+                                                                 mlp_parameters[
+                                                                     "number_of_output_channels"])
+        mlp_parameters["number_of_hidden_layers"] = config.get("number_of_hidden_layers",
+                                                               mlp_parameters[
+                                                                   "number_of_hidden_layers"])
 
     def forward(self,
                 data: Data) -> torch.Tensor:
