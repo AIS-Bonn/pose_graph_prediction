@@ -20,4 +20,5 @@ if __name__ == "__main__":
 
     visualizer = SequentialPredictionVisualizer()
     visualizer.visualize_model(model,
-                               visualization_data)
+                               visualization_data,
+                               use_output_as_next_input=False)
