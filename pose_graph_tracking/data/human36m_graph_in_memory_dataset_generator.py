@@ -1,6 +1,6 @@
 from json import load as load_json_file, dump as save_json_file
 
-from numpy import copy
+from numpy import array, copy
 
 from os.path import exists, join
 
@@ -97,4 +97,7 @@ class Human36MDataset(InMemoryDataset):
         data = convert_samples_to_graph_data(estimated_poses_sample,
                                              ground_truth_sample,
                                              sequence["action_id"])
+
+        data["previous_pose"] = torch.FloatTensor(copy(array(sequence["estimated_poses"][start_frame_id])))
+
         data_list.append(data)
