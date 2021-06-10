@@ -27,10 +27,13 @@ class Human36MDataLoader(object):
     :param path_to_data_root_directory: path to the directory the data files are saved in.
     :param ids_of_subjects_to_load: a list containing a combination of the subject ids [1, 5, 6, 7, 8, 9, 11] or None to
      load all subjects.
+    :param frames_to_skip_at_sequence_start: start sequence after skipping that many frames
+
     """
     def __init__(self,
                  path_to_data_root_directory: str,
-                 ids_of_subjects_to_load: Union[List[int], None] = None):
+                 ids_of_subjects_to_load: Union[List[int], None] = None,
+                 frames_to_skip_at_sequence_start: int = 50):
         # List the loaded sequences are stored in
         self.sequences = []
 
@@ -39,6 +42,7 @@ class Human36MDataLoader(object):
         else:
             self.ids_of_subjects_to_load = [1, 5, 6, 7, 8, 9, 11]
 
+        self.frames_to_skip_at_sequence_start = frames_to_skip_at_sequence_start
         # Making sure path ends with a separator
         self.path_to_input_data_root_dir = join(path_to_data_root_directory, "")
 
@@ -78,7 +82,7 @@ class Human36MDataLoader(object):
             if self.is_any_estimated_joint_missing(estimated_pose_sequence):
                 continue
 
-            ground_truth_pose_sequence = [frame["labels"]["poses_3d"] for frame in current_sequence_data]
+            ground_truth_pose_sequence = [frame["labels"]["poses_3d"] for frame in current_sequence_data[self.frames_to_skip_at_sequence_start:]]
 
             self.sequences.append({"action_id": action_id,
                                    "estimated_poses": estimated_pose_sequence,
@@ -86,7 +90,7 @@ class Human36MDataLoader(object):
 
     def _extract_estimated_pose_sequence_from_sequence_data(self,
                                                             sequence_data: List[dict]):
-        estimated_poses = [frame["poses_3d_filter"] for frame in sequence_data
+        estimated_poses = [frame["poses_3d_filter"] for frame in sequence_data[self.frames_to_skip_at_sequence_start:]
                            if frame["poses_3d_filter"] is not None]
         number_of_missing_frames = len(sequence_data) - len(estimated_poses)
         if number_of_missing_frames > 0:
