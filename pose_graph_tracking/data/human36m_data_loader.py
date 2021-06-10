@@ -27,12 +27,15 @@ class Human36MDataLoader(object):
     :param path_to_data_root_directory: path to the directory the data files are saved in.
     :param ids_of_subjects_to_load: a list containing a combination of the subject ids [1, 5, 6, 7, 8, 9, 11] or None to
      load all subjects.
+    :param specifically_requested_action_label: use only sequences with this action [Direction, Discuss, Eating, Greet,
+    Phone, Pose, Purchase, Sitting, Sitting Down, Smoke, Photo, Wait, Walk, Walk Dog, Walk Together]
     :param frames_to_skip_at_sequence_start: start sequence after skipping that many frames
 
     """
     def __init__(self,
                  path_to_data_root_directory: str,
                  ids_of_subjects_to_load: Union[List[int], None] = None,
+                 specifically_requested_action_label: Union[str, None] = "Walk",
                  frames_to_skip_at_sequence_start: int = 50):
         # List the loaded sequences are stored in
         self.sequences = []
@@ -42,7 +45,9 @@ class Human36MDataLoader(object):
         else:
             self.ids_of_subjects_to_load = [1, 5, 6, 7, 8, 9, 11]
 
+        self.specifically_requested_action_label = specifically_requested_action_label
         self.frames_to_skip_at_sequence_start = frames_to_skip_at_sequence_start
+
         # Making sure path ends with a separator
         self.path_to_input_data_root_dir = join(path_to_data_root_directory, "")
 
@@ -70,8 +75,14 @@ class Human36MDataLoader(object):
     def _incorporate_data_into_sequences(self,
                                          subject_data: dict):
         number_of_sequences = len(subject_data["action_labels"])
+
         for current_sequence_id in range(number_of_sequences):
             current_action_label = subject_data["action_labels"][current_sequence_id]
+
+            if self.specifically_requested_action_label is not None and \
+                    current_action_label != self.specifically_requested_action_label:
+                continue
+
             current_sequence_data = subject_data["sequences"][current_sequence_id]
 
             action_id = convert_action_label_to_action_id(current_action_label)
