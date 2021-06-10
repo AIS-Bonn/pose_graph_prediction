@@ -1,3 +1,5 @@
+from numpy import copy
+
 from time import time
 
 from torch import long as torchlong, zeros
@@ -35,6 +37,8 @@ class SequentialPredictionVisualizer(object):
 
         normalizer = PoseSequenceNormalizer()
         visualized_frames_counter = 0
+        first_pose_in_seed = None
+        second_pose_in_seed = None
         previous_pose = None
         current_pose = None
         model.eval()
@@ -71,7 +75,14 @@ class SequentialPredictionVisualizer(object):
             denormalized_predicted_next_pose = normalizer.denormalize_pose(predicted_next_pose)
             denormalized_next_gt_pose = normalizer.denormalize_pose(next_gt_pose)
 
+            if first_pose_in_seed is None:
+                first_pose_in_seed = gt_data["previous_pose"].numpy()
+                second_pose_in_seed = copy(denormalized_current_pose)
+
             # Visualize poses
+            if use_output_as_next_input:
+                sequential_visualizer.provide_pose_with_uniform_color(first_pose_in_seed, [164, 171, 164])
+                sequential_visualizer.provide_pose_with_uniform_color(second_pose_in_seed, [118, 122, 118])
             sequential_visualizer.provide_pose_with_uniform_color(denormalized_current_pose, [124, 124, 0])
             sequential_visualizer.provide_pose_with_uniform_color(denormalized_predicted_next_pose, [200, 0, 0])
             sequential_visualizer.provide_pose_with_uniform_color(denormalized_next_gt_pose, [0, 200, 0])
