@@ -53,7 +53,7 @@ def get_node_ids_connected_by_edges(estimated_poses_sample: Union[PoseSequenceTy
 
 def convert_samples_to_graph_data(estimated_poses_sample: Union[PoseSequenceType, ndarray],
                                   ground_truth_sample: Union[PoseSequenceType, ndarray],
-                                  action_id: Optional[int]) -> Data:
+                                  action_id: Optional[int] = None) -> Data:
     if len(estimated_poses_sample) != 3:
         print("Data conversion is currently implemented just for a sample length of 3. Exiting.")
         exit(-1)
