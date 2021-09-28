@@ -104,9 +104,12 @@ class PoseGraphPredictionNet(Module):
         encoded_features_of_edges = self.edge_features_encoder(data.features_of_edges)
         encoded_features_of_nodes = self.node_features_encoder(data.x)
 
+        # TODO: add node and edge type ids to the data
         residuals_of_node_features, _, _ = self.pose_graph_prediction_layer.forward(encoded_features_of_nodes,
+                                                                                    data.node_type_ids,
                                                                                     data.node_indexes_connected_by_edges,
                                                                                     encoded_features_of_edges,
+                                                                                    data.edge_type_ids,
                                                                                     global_features=None,
                                                                                     batch_ids=data.batch)
 

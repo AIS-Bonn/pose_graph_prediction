@@ -1,3 +1,4 @@
+from pose_graph_tracking.model.heterogeneous_meta_layer import HeterogeneousMetaLayer
 from pose_graph_tracking.model.utils import get_activation_function_from_type
 
 import torch
@@ -5,8 +6,6 @@ import torch
 from torch.nn import Dropout, LayerNorm, Linear as Lin, Module, Sequential, Sigmoid
 
 from torch_scatter import scatter_add
-
-from torch_geometric.nn import MetaLayer
 
 from typing import Union
 
@@ -278,22 +277,32 @@ class PoseGraphPredictionLayer(Module):
                                                     global_features[batch_ids]], dim=1)
                 return self.node_mlp(node_neighborhoods)
 
-        self.op = MetaLayer(EdgeModel(), NodeModel())
+        self.op = HeterogeneousMetaLayer(EdgeModel(), NodeModel())
 
     def forward(self,
                 features_of_nodes: torch.Tensor,
+                node_type_ids: torch.Tensor,
                 node_ids_for_edges: torch.Tensor,
                 features_of_edges: torch.Tensor,
+                edge_type_ids: torch.Tensor,
                 global_features: Union[torch.Tensor, None] = None,
                 batch_ids: Union[torch.Tensor, None] = None) -> Union[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Calls EdgeModel and NodeModel in this order to update the features of the edges and nodes using trained MLPs.
 
         :param features_of_nodes: Tensor of features defining nodes.
+        :param node_type_ids: Tensor specifying the node type as an index starting from zero.
         :param node_ids_for_edges: Tensor encoding the connections between nodes by edges.
         :param features_of_edges: Tensor of features for every edge.
+        :param edge_type_ids: Tensor specifying the edge type as an index starting from zero.
         :param global_features: Tensor of global features - one set of features per graph.
         :param batch_ids: Tensor of ids encoding which node belongs to which graph.
         :return: Updated features of nodes and edges, and original global features.
         """
-        return self.op.forward(features_of_nodes, node_ids_for_edges, features_of_edges, global_features, batch_ids)
+        return self.op.forward(features_of_nodes,
+                               node_type_ids,
+                               node_ids_for_edges,
+                               features_of_edges,
+                               edge_type_ids,
+                               global_features,
+                               batch_ids)
