@@ -2,7 +2,7 @@
   "batch_size": 1300,
   "continue_learning_from_existing_model": false,
   "learning_rate": 0.001,
-  "number_of_epochs": 5,
+  "number_of_epochs": 50,
   "try_to_train_on_gpu": true,
   "save_every_model": false,
   "save_best_model_on_training_data": true,
