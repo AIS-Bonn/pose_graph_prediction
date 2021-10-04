@@ -14,15 +14,14 @@ PoseSequenceType = List[PoseType]
 
 
 def get_features_of_nodes(estimated_pose: Union[PoseType, ndarray]) -> torch.FloatTensor:
-    number_of_joints = len(estimated_pose)
-    mean_joint_id = number_of_joints / 2
-
     # Convert each joint from the latest time step to a node
     features_of_nodes = []
-    for joint_id, joint in enumerate(estimated_pose):
-        # Normalize joint_id to range from -1 to 1
-        normalized_joint_id = (joint_id - mean_joint_id) / mean_joint_id
-        node_features = [normalized_joint_id, joint[0], joint[1], joint[2]]
+    number_of_joints = len(estimated_pose)
+    for joint_id, joint_position in enumerate(estimated_pose):
+        # One-hot encode joint id
+        node_features = [0.0] * number_of_joints
+        node_features[joint_id] = 1.0
+        node_features.extend([joint_position[0], joint_position[1], joint_position[2]])
         features_of_nodes.append(node_features)
     return torch.FloatTensor(array(features_of_nodes))
 

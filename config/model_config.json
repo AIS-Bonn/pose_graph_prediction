@@ -11,7 +11,7 @@
   },
   "node_encoder_parameters": {
     "activation_type": "relu",
-    "number_of_input_channels": 4,
+    "number_of_input_channels": 20,
     "number_of_hidden_channels": 50,
     "number_of_output_channels": 20,
     "number_of_hidden_layers": 3
