@@ -43,7 +43,16 @@ class Trainer(object):
         self.learning_rate = 0.001
         self.number_of_epochs = 2000000
         self.try_to_train_on_gpu = False
+        self.save_every_model = False
+        self.save_best_model_on_training_data = False
+        self.save_best_model_on_test_data = True
         self._load_parameters_from_config(training_config)
+
+        if self.save_best_model_on_training_data:
+            self.best_training_loss = float("inf")
+
+        if self.save_best_model_on_test_data:
+            self.best_test_loss = float("inf")
 
         self.trainee = trainee
 
@@ -83,6 +92,9 @@ class Trainer(object):
         self.learning_rate = config.get("learning_rate", self.learning_rate)
         self.number_of_epochs = config.get("number_of_epochs", self.number_of_epochs)
         self.try_to_train_on_gpu = config.get("try_to_train_on_gpu", self.try_to_train_on_gpu)
+        self.save_every_model = config.get("save_every_model", self.save_every_model)
+        self.save_best_model_on_training_data = config.get("save_best_model_on_training_data", self.save_best_model_on_training_data)
+        self.save_best_model_on_test_data = config.get("save_best_model_on_test_data", self.save_best_model_on_test_data)
 
     def _init_training_data_loader(self,
                                    training_data: Dataset,
@@ -138,12 +150,7 @@ class Trainer(object):
             self._save_results_statistics_to_file(results)
 
             # Save model and print results
-            if epoch % 1 == 0:
-                self.save_model(str(epoch))
-                print(datetime.now(),
-                      ' epoch ', epoch,
-                      ' train_loss: ', train_loss,
-                      ' test_loss: ', test_loss)
+            self._save_models(epoch, train_loss, test_loss)
 
     def train(self) -> float:
         """
@@ -246,6 +253,25 @@ class Trainer(object):
                 "global_max_loss": global_max_loss,
                 "max_loss_after_min_loss": max_after_min_loss,
                 "last_loss": last_loss}
+
+    def _save_models(self,
+                     epoch: int,
+                     train_loss: float,
+                     test_loss: float):
+        if self.save_every_model:
+            self.save_model(str(epoch))
+        if self.save_best_model_on_training_data:
+            if train_loss < self.best_training_loss:
+                self.best_training_loss = train_loss
+                self.save_model("best_on_training_data")
+        if self.save_best_model_on_test_data:
+            if test_loss < self.best_test_loss:
+                self.best_test_loss = test_loss
+                self.save_model("best_on_test_data")
+        print(datetime.now(),
+              ' epoch ', epoch,
+              ' train_loss: ', train_loss,
+              ' test_loss: ', test_loss)
 
     def save_model(self,
                    model_name_postfix: str):
