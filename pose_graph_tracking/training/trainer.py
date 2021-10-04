@@ -248,8 +248,8 @@ class Trainer(object):
                 "last_loss": last_loss}
 
     def save_model(self,
-                   model_id: str):
-        torch.save(self.trainee.state_dict(), MODEL_DIRECTORY + MODEL_NAME_PREFIX + str(model_id) + ".model")
+                   model_name_postfix: str):
+        torch.save(self.trainee.state_dict(), MODEL_DIRECTORY + MODEL_NAME_PREFIX + str(model_name_postfix) + ".model")
 
     def visualize_model_output(self,
                                model_result: ndarray,
