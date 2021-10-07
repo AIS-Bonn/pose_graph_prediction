@@ -13,27 +13,39 @@ PoseType = List[Tuple[float, float, float]]
 PoseSequenceType = List[PoseType]
 
 
-def get_features_of_nodes(estimated_pose: Union[PoseType, ndarray]) -> torch.FloatTensor:
+def get_features_of_nodes(estimated_poses_sample: Union[PoseSequenceType, ndarray]) -> torch.FloatTensor:
     # Convert each joint from the latest time step to a node
+    previous_estimated_pose = estimated_poses_sample[0]
+    current_estimated_pose = estimated_poses_sample[1]
+    # This node feature setup requires estimated poses to have an estimate for every joint in every time step
+    if len(previous_estimated_pose) != len(current_estimated_pose):
+        print("Pose misses joints")
+
     features_of_nodes = []
-    number_of_joints = len(estimated_pose)
-    for joint_id, joint_position in enumerate(estimated_pose):
-        # One-hot encode joint id
-        node_features = [0.0] * number_of_joints
-        node_features[joint_id] = 1.0
-        node_features.extend([joint_position[0], joint_position[1], joint_position[2]])
+    number_of_joints = len(previous_estimated_pose)
+    for joint_id in range(number_of_joints):
+        node_features = [previous_estimated_pose[joint_id][0],
+                         previous_estimated_pose[joint_id][1],
+                         previous_estimated_pose[joint_id][2],
+                         current_estimated_pose[joint_id][0],
+                         current_estimated_pose[joint_id][1],
+                         current_estimated_pose[joint_id][2]]
         features_of_nodes.append(node_features)
     return torch.FloatTensor(array(features_of_nodes))
 
 
 def get_features_of_edges(estimated_poses_sample: Union[PoseSequenceType, ndarray]) -> torch.FloatTensor:
     features_of_edges = []
-    for source_joint in estimated_poses_sample[0]:
-        for target_joint in estimated_poses_sample[1]:
-            x_difference = target_joint[0] - source_joint[0]
-            y_difference = target_joint[1] - source_joint[1]
-            z_difference = target_joint[2] - source_joint[2]
-            edge_feature = [x_difference, y_difference, z_difference]
+    number_of_joints_in_previous_pose = len(estimated_poses_sample[0])
+    number_of_joints_in_current_pose = len(estimated_poses_sample[1])
+    one_hot_encoding_lenght = number_of_joints_in_previous_pose * number_of_joints_in_current_pose
+    for source_joint_id in range(number_of_joints_in_previous_pose):
+        for target_joint_id in range(number_of_joints_in_current_pose):
+            # One-hot encode joint id combinations
+            edge_feature = [0.0] * one_hot_encoding_lenght
+            id_of_joint_combination = target_joint_id * number_of_joints_in_previous_pose + source_joint_id
+            edge_feature[id_of_joint_combination] = 1.0
+
             features_of_edges.append(edge_feature)
     return torch.FloatTensor(array(features_of_edges))
 
@@ -62,7 +74,7 @@ def convert_samples_to_graph_data(estimated_poses_sample: Union[PoseSequenceType
     normalizer.normalize_pose_sequence(estimated_poses_sample)
     normalizer.normalize_pose_sequence(ground_truth_sample)
 
-    features_of_nodes = get_features_of_nodes(estimated_poses_sample[1])
+    features_of_nodes = get_features_of_nodes(estimated_poses_sample)
     features_of_edges = get_features_of_edges(estimated_poses_sample)
     node_ids_connected_by_edges = get_node_ids_connected_by_edges(estimated_poses_sample)
 
@@ -94,7 +106,7 @@ def convert_poses_to_graph_data(previous_estimated_pose: Union[PoseType, ndarray
     previous_estimated_pose = normalizer.normalize_pose(previous_estimated_pose)
     current_estimated_pose = normalizer.normalize_pose(current_estimated_pose)
 
-    features_of_nodes = get_features_of_nodes(current_estimated_pose)
+    features_of_nodes = get_features_of_nodes([previous_estimated_pose, current_estimated_pose])
     features_of_edges = get_features_of_edges([previous_estimated_pose, current_estimated_pose])
     node_ids_connected_by_edges = get_node_ids_connected_by_edges([previous_estimated_pose, current_estimated_pose])
 
