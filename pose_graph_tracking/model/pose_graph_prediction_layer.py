@@ -45,7 +45,6 @@ class PoseGraphPredictionLayer(Module):
 
         use_attention = model_config["use_attention"]
 
-        number_of_features_per_edge = model_config["edge_encoder_parameters"]["number_of_output_channels"]
         number_of_features_per_node = model_config["node_encoder_parameters"]["number_of_output_channels"]
         number_of_global_features = model_config["pose_graph_prediction_layer_parameters"]["number_of_global_features"]
 
@@ -78,7 +77,6 @@ class PoseGraphPredictionLayer(Module):
                     mlp_name = "attention_" + mlp_name
 
                 number_of_input_channels = number_of_features_per_node * 2 + \
-                                           number_of_features_per_edge + \
                                            number_of_global_features
                 number_of_hidden_channels = edge_mlp_parameters["number_of_hidden_channels"]
                 number_of_output_channels = edge_mlp_parameters["number_of_output_channels"]
@@ -130,12 +128,6 @@ class PoseGraphPredictionLayer(Module):
                  [feature_0_of_target_node_of_edge_1, feature_1_of_target_node_of_edge_1, ..],
                  .. ]
                 with size (number_of_edges_in_current_batch x number_of_features_per_node).
-
-                features_of_edges:
-                [[feature_0_of_edge_0, feature_1_of_edge_0, ..],
-                 [feature_0_of_edge_1, feature_1_of_edge_1, ..],
-                 .. ]
-                with size (number_of_edges_in_current_batch x number_of_features_per_edge).
 
                 global_features:
                 [[global_feature_0_of_graph_0, global_feature_1_of_graph_0, ..],
@@ -237,7 +229,7 @@ class PoseGraphPredictionLayer(Module):
                 [[feature_0_of_edge_0, feature_1_of_edge_0, ..],
                  [feature_0_of_edge_1, feature_1_of_edge_1, ..],
                  .. ]
-                with size (number_of_edges_in_current_batch x number_of_features_per_edge).
+                with size (number_of_edges_in_current_batch x number_of_features_per_edge after EdgeModel).
 
                 global_features:
                 [[global_feature_0_of_graph_0, global_feature_1_of_graph_0, ..],
