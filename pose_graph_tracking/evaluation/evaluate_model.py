@@ -85,6 +85,8 @@ for validation_subject_id in ids_of_subjects:
         remove_data(PATH_TO_DATA_DIRECTORY + "Human36M/test_data")
 
     mean_validation_loss_per_subject.append(sum_of_mean_losses_for_current_validation_subject / float(validations_counter))
+    print("finished evaluation for validation subject id: ", validation_subject_id)
+    print("mean_validation_loss_per_subject:", mean_validation_loss_per_subject)
 
     remove_data(PATH_TO_DATA_DIRECTORY + "Human36M/validation_data")
 
