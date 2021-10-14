@@ -4,10 +4,10 @@
   "use_attention": true,
   "edge_encoder_parameters": {
     "activation_type": "relu",
-    "number_of_input_channels": 289,
-    "number_of_hidden_channels": 50,
-    "number_of_output_channels": 20,
-    "number_of_hidden_layers": 3
+    "number_of_input_channels": 0,
+    "number_of_hidden_channels": 0,
+    "number_of_output_channels": 0,
+    "number_of_hidden_layers": 0
   },
   "node_encoder_parameters": {
     "activation_type": "relu",
@@ -20,11 +20,13 @@
     "activation_type": "relu",
     "number_of_global_features": 0,
     "edge_mlp_parameters": {
+      "number_of_edge_types": 289,
       "number_of_hidden_channels": 50,
       "number_of_output_channels": 20,
       "number_of_hidden_layers": 3
     },
     "node_mlp_parameters": {
+      "number_of_target_node_types": 17,
       "number_of_hidden_channels": 50,
       "number_of_output_channels": 20,
       "number_of_hidden_layers": 3

@@ -13,7 +13,7 @@ PoseType = List[Tuple[float, float, float]]
 PoseSequenceType = List[PoseType]
 
 
-def get_features_of_nodes(estimated_poses_sample: Union[PoseSequenceType, ndarray]) -> torch.FloatTensor:
+def get_features_and_type_ids_of_nodes(estimated_poses_sample: Union[PoseSequenceType, ndarray]) -> torch.FloatTensor:
     # Convert each joint from the latest time step to a node
     previous_estimated_pose = estimated_poses_sample[0]
     current_estimated_pose = estimated_poses_sample[1]
@@ -22,6 +22,7 @@ def get_features_of_nodes(estimated_poses_sample: Union[PoseSequenceType, ndarra
         print("Pose misses joints")
 
     features_of_nodes = []
+    type_ids_of_nodes = []
     number_of_joints = len(previous_estimated_pose)
     for joint_id in range(number_of_joints):
         node_features = [previous_estimated_pose[joint_id][0],
@@ -31,23 +32,25 @@ def get_features_of_nodes(estimated_poses_sample: Union[PoseSequenceType, ndarra
                          current_estimated_pose[joint_id][1],
                          current_estimated_pose[joint_id][2]]
         features_of_nodes.append(node_features)
-    return torch.FloatTensor(array(features_of_nodes))
+        type_ids_of_nodes.append(joint_id)
+    return torch.FloatTensor(array(features_of_nodes)), torch.IntTensor(array(type_ids_of_nodes))
 
 
-def get_features_of_edges(estimated_poses_sample: Union[PoseSequenceType, ndarray]) -> torch.FloatTensor:
-    features_of_edges = []
+def get_type_ids_of_edges(estimated_poses_sample: Union[PoseSequenceType, ndarray]) -> torch.FloatTensor:
+    # features_of_edges = []
+    type_ids_of_edges = []
     number_of_joints_in_previous_pose = len(estimated_poses_sample[0])
     number_of_joints_in_current_pose = len(estimated_poses_sample[1])
-    one_hot_encoding_lenght = number_of_joints_in_previous_pose * number_of_joints_in_current_pose
+    # one_hot_encoding_lenght = number_of_joints_in_previous_pose * number_of_joints_in_current_pose
     for source_joint_id in range(number_of_joints_in_previous_pose):
         for target_joint_id in range(number_of_joints_in_current_pose):
             # One-hot encode joint id combinations
-            edge_feature = [0.0] * one_hot_encoding_lenght
+            # edge_feature = [0.0] * one_hot_encoding_lenght
             id_of_joint_combination = target_joint_id * number_of_joints_in_previous_pose + source_joint_id
-            edge_feature[id_of_joint_combination] = 1.0
 
-            features_of_edges.append(edge_feature)
-    return torch.FloatTensor(array(features_of_edges))
+            # features_of_edges.append(edge_feature)
+            type_ids_of_edges.append(id_of_joint_combination)
+    return torch.IntTensor(array(type_ids_of_edges))
 
 
 def get_node_ids_connected_by_edges(estimated_poses_sample: Union[PoseSequenceType, ndarray]) -> torch.Tensor:
@@ -74,8 +77,8 @@ def convert_samples_to_graph_data(estimated_poses_sample: Union[PoseSequenceType
     normalizer.normalize_pose_sequence(estimated_poses_sample)
     normalizer.normalize_pose_sequence(ground_truth_sample)
 
-    features_of_nodes = get_features_of_nodes(estimated_poses_sample)
-    features_of_edges = get_features_of_edges(estimated_poses_sample)
+    features_of_nodes, type_ids_of_nodes = get_features_and_type_ids_of_nodes(estimated_poses_sample)
+    type_ids_of_edges = get_type_ids_of_edges(estimated_poses_sample)
     node_ids_connected_by_edges = get_node_ids_connected_by_edges(estimated_poses_sample)
 
     # Convert the ground truth - the states of the joints in the next time step - to the format of the network's
@@ -83,10 +86,12 @@ def convert_samples_to_graph_data(estimated_poses_sample: Union[PoseSequenceType
     ground_truth_node_positions = torch.FloatTensor(array(ground_truth_sample[-1]))
 
     data = Data(x=features_of_nodes,
-                features_of_edges=features_of_edges,
+                features_of_edges=None,
                 node_indexes_connected_by_edges=node_ids_connected_by_edges,
                 # name within Data has to include 'index' in order for collate() to work properly..
                 ground_truth=ground_truth_node_positions,
+                node_type_ids=type_ids_of_nodes,
+                edge_type_ids=type_ids_of_edges,
                 normalization_offset=torch.FloatTensor(normalizer.offset),
                 normalization_scale=torch.FloatTensor(array([normalizer.scale_factor])),
                 normalization_rotation_matrix=torch.FloatTensor(normalizer.orientation_normalization_matrix))
@@ -106,14 +111,16 @@ def convert_poses_to_graph_data(previous_estimated_pose: Union[PoseType, ndarray
     previous_estimated_pose = normalizer.normalize_pose(previous_estimated_pose)
     current_estimated_pose = normalizer.normalize_pose(current_estimated_pose)
 
-    features_of_nodes = get_features_of_nodes([previous_estimated_pose, current_estimated_pose])
-    features_of_edges = get_features_of_edges([previous_estimated_pose, current_estimated_pose])
+    features_of_nodes, type_ids_of_nodes = get_features_and_type_ids_of_nodes([previous_estimated_pose, current_estimated_pose])
+    type_ids_of_edges = get_type_ids_of_edges([previous_estimated_pose, current_estimated_pose])
     node_ids_connected_by_edges = get_node_ids_connected_by_edges([previous_estimated_pose, current_estimated_pose])
 
     data = Data(x=features_of_nodes,
-                features_of_edges=features_of_edges,
+                features_of_edges=None,
                 node_indexes_connected_by_edges=node_ids_connected_by_edges,
                 # name within Data has to include 'index' in order for collate() to work properly..
+                node_type_ids=type_ids_of_nodes,
+                edge_type_ids=type_ids_of_edges,
                 normalization_offset=torch.FloatTensor(normalizer.offset),
                 normalization_scale=torch.FloatTensor(array([normalizer.scale_factor])),
                 normalization_rotation_matrix=torch.FloatTensor(normalizer.orientation_normalization_matrix))

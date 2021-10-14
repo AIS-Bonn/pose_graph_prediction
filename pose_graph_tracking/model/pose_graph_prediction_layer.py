@@ -1,12 +1,11 @@
 from pose_graph_tracking.model.utils import get_activation_function_from_type
+from pose_graph_tracking.model.heterogeneous_meta_layer import HeterogeneousMetaLayer
 
 import torch
 
 from torch.nn import Dropout, LayerNorm, Linear as Lin, Module, Sequential, Sigmoid
 
 from torch_scatter import scatter_add
-
-from torch_geometric.nn import MetaLayer
 
 from typing import Union
 
@@ -65,10 +64,13 @@ class PoseGraphPredictionLayer(Module):
                 """
                 super(EdgeModel, self).__init__()
 
-                self.edge_mlp = self.generate_edge_mlp(dropout_probability=dropout_probability)
-                if use_attention:
-                    self.edge_attention_mlp = self.generate_edge_mlp(dropout_probability=attention_dropout_probability,
-                                                                     generate_attention_mlp=True)
+                self.edge_mlps = []
+                self.edge_attention_mlps = []
+                for edge_type in range(edge_mlp_parameters["number_of_edge_types"]):
+                    self.edge_mlps.append(self.generate_edge_mlp(dropout_probability=dropout_probability))
+                    if use_attention:
+                        self.edge_attention_mlps.append(self.generate_edge_mlp(dropout_probability=attention_dropout_probability,
+                                                                               generate_attention_mlp=True))
 
             def generate_edge_mlp(self,
                                   dropout_probability: float,
@@ -106,9 +108,10 @@ class PoseGraphPredictionLayer(Module):
             def forward(self,
                         features_of_source_nodes: torch.Tensor,
                         features_of_target_nodes: torch.Tensor,
-                        features_of_edges: torch.Tensor,
-                        global_features: torch.Tensor,
-                        batch_ids: torch.Tensor) -> torch.Tensor:
+                        features_of_edges: Union[torch.Tensor, None],
+                        global_features: Union[torch.Tensor, None],
+                        edge_type_ids: torch.Tensor,
+                        batch_ids: Union[torch.Tensor, None]) -> torch.Tensor:
                 """
                 For each edge, concatenates the features of the edge's source node, the features of the target node, the
                 own features of that edge and the global features of its graph.
@@ -156,21 +159,32 @@ class PoseGraphPredictionLayer(Module):
                 :param batch_ids: Tensor of ids encoding which node belongs to which graph.
                 :return: Updated features of edges.
                 """
-                if global_features is None:
-                    edge_neighborhoods = torch.cat([features_of_source_nodes,
-                                                    features_of_target_nodes,
-                                                    features_of_edges], 1)
-                    resulting_edges = self.edge_mlp(edge_neighborhoods)
-                else:
-                    edge_neighborhoods = torch.cat([features_of_source_nodes,
-                                                    features_of_target_nodes,
-                                                    features_of_edges,
-                                                    global_features[batch_ids]], 1)
-                    resulting_edges = self.edge_mlp(edge_neighborhoods)
+                resulting_edges = torch.zeros((features_of_source_nodes.shape[0],
+                                               edge_mlp_parameters["number_of_output_channels"]))
 
-                if use_attention:
-                    attentions_per_edge = self.edge_attention_mlp(edge_neighborhoods)
-                    resulting_edges = resulting_edges * attentions_per_edge
+                for edge_type in range(edge_mlp_parameters["number_of_edge_types"]):
+                    ids_of_features_with_current_edge_type_id = (edge_type_ids == edge_type).nonzero(as_tuple=True)
+
+                    # Use only the features of those nodes that are connected by edges of the current type
+                    features_to_concatenate = [features_of_source_nodes[ids_of_features_with_current_edge_type_id],
+                                               features_of_target_nodes[ids_of_features_with_current_edge_type_id]]
+
+                    if features_of_edges is not None:
+                        features_to_concatenate.append(features_of_edges[ids_of_features_with_current_edge_type_id])
+
+                    if global_features is not None:
+                        features_to_concatenate.append(global_features[batch_ids][ids_of_features_with_current_edge_type_id])
+
+                    # Concatenate the features corresponding to an edge (node features, edge features, and what's
+                    # available and defined)
+                    edge_neighborhoods = torch.cat(features_to_concatenate, 1)
+                    # Save resulting features for those edges with the current edge type id
+                    resulting_edges[ids_of_features_with_current_edge_type_id] = self.edge_mlps[edge_type](edge_neighborhoods)
+
+                    if use_attention:
+                        # Apply attention model to resulting feature of current edge type id
+                        attentions_per_edge = self.edge_attention_mlps[edge_type](edge_neighborhoods)
+                        resulting_edges[ids_of_features_with_current_edge_type_id] = resulting_edges[ids_of_features_with_current_edge_type_id] * attentions_per_edge
 
                 return resulting_edges
 
@@ -189,28 +203,32 @@ class PoseGraphPredictionLayer(Module):
                 number_of_output_channels = node_mlp_parameters["number_of_output_channels"]
                 number_of_hidden_layers = node_mlp_parameters["number_of_hidden_layers"]
 
-                self.node_mlp = Sequential()
-                self.node_mlp.add_module("node_mlp_input_layer", Lin(number_of_input_channels, number_of_hidden_channels))
+                self.node_mlps = []
+                for target_node_type in range(node_mlp_parameters["number_of_target_node_types"]):
+                    node_mlp = Sequential()
+                    node_mlp.add_module("node_mlp_input_layer", Lin(number_of_input_channels, number_of_hidden_channels))
 
-                for layer_id in range(number_of_hidden_layers):
-                    self.node_mlp.add_module("node_mlp_activation_function_" + str(layer_id), activation_function())
-                    self.node_mlp.add_module("node_mlp_hidden_dropout_" + str(layer_id), Dropout(dropout_probability))
-                    self.node_mlp.add_module("node_mlp_hidden_layer_" + str(layer_id),
-                                             Lin(number_of_hidden_channels, number_of_hidden_channels))
+                    for layer_id in range(number_of_hidden_layers):
+                        node_mlp.add_module("node_mlp_activation_function_" + str(layer_id), activation_function())
+                        node_mlp.add_module("node_mlp_hidden_dropout_" + str(layer_id), Dropout(dropout_probability))
+                        node_mlp.add_module("node_mlp_hidden_layer_" + str(layer_id),
+                                            Lin(number_of_hidden_channels, number_of_hidden_channels))
 
-                self.node_mlp.add_module("node_mlp_output_activation_function", activation_function())
-                self.node_mlp.add_module("node_mlp_output_dropout", Dropout(dropout_probability))
-                self.node_mlp.add_module("node_mlp_output_layer",
-                                         Lin(number_of_hidden_channels, number_of_output_channels))
-                self.node_mlp.add_module("node_mlp_layer_norm", LayerNorm(number_of_output_channels))
-                self.node_mlp.apply(init_weights)
+                    node_mlp.add_module("node_mlp_output_activation_function", activation_function())
+                    node_mlp.add_module("node_mlp_output_dropout", Dropout(dropout_probability))
+                    node_mlp.add_module("node_mlp_output_layer", Lin(number_of_hidden_channels, number_of_output_channels))
+                    node_mlp.add_module("node_mlp_layer_norm", LayerNorm(number_of_output_channels))
+                    node_mlp.apply(init_weights)
+
+                    self.node_mlps.append(node_mlp)
 
             def forward(self,
                         features_of_nodes: torch.Tensor,
                         node_ids_for_edges: torch.Tensor,
-                        features_of_edges: torch.Tensor,
-                        global_features: torch.Tensor,
-                        batch_ids: torch.Tensor) -> torch.Tensor:
+                        features_of_edges: Union[torch.Tensor, None],
+                        global_features: Union[torch.Tensor, None],
+                        node_type_ids: torch.Tensor,
+                        batch_ids: Union[torch.Tensor, None]) -> torch.Tensor:
                 """
                 For each node, sums up the features of all edges pointing to that node.
                 Concatenates the resulting feature vector with the features of the node itself and the global features
@@ -269,22 +287,33 @@ class PoseGraphPredictionLayer(Module):
                                                              dim=0,
                                                              dim_size=features_of_nodes.size(0))
 
-                if global_features is None:
-                    node_neighborhoods = torch.cat([features_of_nodes,
-                                                    edge_features_summed_by_target], dim=1)
-                else:
-                    node_neighborhoods = torch.cat([features_of_nodes,
-                                                    edge_features_summed_by_target,
-                                                    global_features[batch_ids]], dim=1)
-                return self.node_mlp(node_neighborhoods)
+                resulting_nodes = torch.zeros((features_of_nodes.shape[0],
+                                               node_mlp_parameters["number_of_output_channels"]))
 
-        self.op = MetaLayer(EdgeModel(), NodeModel())
+                for node_type in range(node_mlp_parameters["number_of_target_node_types"]):
+                    ids_of_features_with_current_node_type_id = (node_type_ids == node_type).nonzero(as_tuple=True)
+
+                    # Use only the features of those nodes that are connected by edges of the current type
+                    features_to_concatenate = [features_of_nodes[ids_of_features_with_current_node_type_id],
+                                               edge_features_summed_by_target[ids_of_features_with_current_node_type_id]]
+
+                    if global_features is not None:
+                        features_to_concatenate.append(global_features[batch_ids][ids_of_features_with_current_node_type_id])
+
+                    node_neighborhoods = torch.cat(features_to_concatenate, dim=1)
+                    resulting_nodes[ids_of_features_with_current_node_type_id] = self.node_mlps[node_type](node_neighborhoods)
+
+                return resulting_nodes
+
+        self.op = HeterogeneousMetaLayer(EdgeModel(), NodeModel())
 
     def forward(self,
                 features_of_nodes: torch.Tensor,
                 node_ids_for_edges: torch.Tensor,
-                features_of_edges: torch.Tensor,
+                features_of_edges: Union[torch.Tensor, None] = None,
                 global_features: Union[torch.Tensor, None] = None,
+                node_type_ids: Union[torch.Tensor, None] = None,
+                edge_type_ids: Union[torch.Tensor, None] = None,
                 batch_ids: Union[torch.Tensor, None] = None) -> Union[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Calls EdgeModel and NodeModel in this order to update the features of the edges and nodes using trained MLPs.
@@ -293,7 +322,15 @@ class PoseGraphPredictionLayer(Module):
         :param node_ids_for_edges: Tensor encoding the connections between nodes by edges.
         :param features_of_edges: Tensor of features for every edge.
         :param global_features: Tensor of global features - one set of features per graph.
+        :param node_type_ids: Tensor of indices defining the type of each node.
+        :param edge_type_ids: Tensor of indices defining the type of each edge.
         :param batch_ids: Tensor of ids encoding which node belongs to which graph.
         :return: Updated features of nodes and edges, and original global features.
         """
-        return self.op.forward(features_of_nodes, node_ids_for_edges, features_of_edges, global_features, batch_ids)
+        return self.op.forward(features_of_nodes,
+                               node_ids_for_edges,
+                               features_of_edges,
+                               global_features,
+                               node_type_ids,
+                               edge_type_ids,
+                               batch_ids)
