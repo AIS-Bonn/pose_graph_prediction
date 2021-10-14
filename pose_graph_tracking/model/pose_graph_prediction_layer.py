@@ -159,8 +159,9 @@ class PoseGraphPredictionLayer(Module):
                 :param batch_ids: Tensor of ids encoding which node belongs to which graph.
                 :return: Updated features of edges.
                 """
+                device = features_of_source_nodes.device
                 resulting_edges = torch.zeros((features_of_source_nodes.shape[0],
-                                               edge_mlp_parameters["number_of_output_channels"]))
+                                               edge_mlp_parameters["number_of_output_channels"])).to(device)
 
                 for edge_type in range(edge_mlp_parameters["number_of_edge_types"]):
                     ids_of_features_with_current_edge_type_id = (edge_type_ids == edge_type).nonzero(as_tuple=True)
@@ -287,8 +288,9 @@ class PoseGraphPredictionLayer(Module):
                                                              dim=0,
                                                              dim_size=features_of_nodes.size(0))
 
+                device = features_of_nodes.device
                 resulting_nodes = torch.zeros((features_of_nodes.shape[0],
-                                               node_mlp_parameters["number_of_output_channels"]))
+                                               node_mlp_parameters["number_of_output_channels"])).to(device)
 
                 for node_type in range(node_mlp_parameters["number_of_target_node_types"]):
                     ids_of_features_with_current_node_type_id = (node_type_ids == node_type).nonzero(as_tuple=True)
