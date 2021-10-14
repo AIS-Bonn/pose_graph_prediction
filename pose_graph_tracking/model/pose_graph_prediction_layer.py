@@ -3,7 +3,7 @@ from pose_graph_tracking.model.heterogeneous_meta_layer import HeterogeneousMeta
 
 import torch
 
-from torch.nn import Dropout, LayerNorm, Linear as Lin, Module, Sequential, Sigmoid
+from torch.nn import Dropout, LayerNorm, Linear as Lin, Module, ModuleList, Sequential, Sigmoid
 
 from torch_scatter import scatter_add
 
@@ -64,8 +64,8 @@ class PoseGraphPredictionLayer(Module):
                 """
                 super(EdgeModel, self).__init__()
 
-                self.edge_mlps = []
-                self.edge_attention_mlps = []
+                self.edge_mlps = ModuleList()
+                self.edge_attention_mlps = ModuleList()
                 for edge_type in range(edge_mlp_parameters["number_of_edge_types"]):
                     self.edge_mlps.append(self.generate_edge_mlp(dropout_probability=dropout_probability))
                     if use_attention:
@@ -204,7 +204,7 @@ class PoseGraphPredictionLayer(Module):
                 number_of_output_channels = node_mlp_parameters["number_of_output_channels"]
                 number_of_hidden_layers = node_mlp_parameters["number_of_hidden_layers"]
 
-                self.node_mlps = []
+                self.node_mlps = ModuleList()
                 for target_node_type in range(node_mlp_parameters["number_of_target_node_types"]):
                     node_mlp = Sequential()
                     node_mlp.add_module("node_mlp_input_layer", Lin(number_of_input_channels, number_of_hidden_channels))
