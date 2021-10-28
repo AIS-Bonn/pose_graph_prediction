@@ -24,7 +24,7 @@ The input pose graphs are generated from images of multiple cameras observing th
 The [Human3.6M data set](http://vision.imar.ro/human3.6m/description.php) provides such data and ground truth pose annotations.  
 The images from the data set are processed using the [SmartEdgeSensor3DHumanPose](https://github.com/AIS-Bonn/SmartEdgeSensor3DHumanPose) package to generate human pose graphs.  
 
-![Human pose graph projected into image from human3.6m](./docs/human_pose_graph_projected_into_human36m_image.png)
+![Human pose graph projected into image from human3.6m](./docs/readme/human_pose_graph_projected_into_human36m_image.png)
 
 Figure 2: Exemplary generated human pose graph projected into an image from the Human3.6M data set.
 Image source: [Real-Time Multi-View 3D Human Pose Estimation using Semantic Feedback to Smart Edge Sensors](https://www.ais.uni-bonn.de/papers/RSS_2021_Bultmann.pdf)
