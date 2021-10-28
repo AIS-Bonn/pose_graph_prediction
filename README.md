@@ -24,10 +24,9 @@ The input pose graphs are generated from images of multiple cameras observing th
 The [Human3.6M data set](http://vision.imar.ro/human3.6m/description.php) provides such data and ground truth pose annotations.  
 The images from the data set are processed using the [SmartEdgeSensor3DHumanPose](https://github.com/AIS-Bonn/SmartEdgeSensor3DHumanPose) package to generate human pose graphs.  
 
-Exemplary generated human pose graph projected into an image from the Human3.6M data set:  
-
 ![Human pose graph projected into image from human3.6m](./docs/human_pose_graph_projected_into_human36m_image.png)
 
+Figure 2: Exemplary generated human pose graph projected into an image from the Human3.6M data set.
 Image source: [Real-Time Multi-View 3D Human Pose Estimation using Semantic Feedback to Smart Edge Sensors](https://www.ais.uni-bonn.de/papers/RSS_2021_Bultmann.pdf)
 
 </details>
@@ -55,10 +54,11 @@ The normalization applies a translation and rotation is such a way that:
 - the human is facing in the x-direction of the local coordinate frame
   - this is achieved by rotating the pose around the z-axis of the local coordinate frame
 
+![Visualization of a normalized pose](./docs/readme/normalization.png)
 Additionally, the height of the human is estimated by summing the bone lengths from the one leg, the spine, the neck and the head.  
 The pose is scaled by dividing it with the estimated height.  
 
-![Normalization of poses](./docs/readme/normalization.png)
+Figure 3: Visualization of a normalized pose.
 
 </details>
 
@@ -86,9 +86,9 @@ For that every joint becomes one a node n<sub>i</sub> in the graph.
 To incorporate the assumption, every node from the previous pose at time step t-1 is connected to every node from the current pose at time step t via a directed edge e<sub>i,j</sub>.  
 Every node and every edge can have an associated feature vector - e.g. joint position as node feature. 
 
-A simplified example with only two joints per pose is used in the following:
-
 ![Conversion of the pose sequence to one graph for the GNN](./docs/readme/pose_sequence_to_graph_data_conversion.png)
+
+Figure 4: A simplified example graph with only two joints per pose.
 
 The GNN updates only features of nodes with incoming edges.  
 It's task will be to update the node positions from time step t to generate a prediction for time step t+1. 
@@ -110,6 +110,8 @@ Exemplary for edge e<sub>1,3</sub>:
 ![Exemplary graph for the edge update of a GNN](./docs/readme/gnn_edge_update_example_graph.png)
 ![Edge update of a GNN](./docs/readme/gnn_edge_update.png) 
 
+Figure 5: Visualization of the graph and the submodules involved in the edge update for edge e<sub>1,3</sub>.
+
 ---
 
 #### Node Update
@@ -129,6 +131,8 @@ Exemplary for node n<sub>3</sub>:
 
 ![Exemplary graph for the node update of a GNN](./docs/readme/gnn_node_update.png)
 ![Node update of a GNN](./docs/readme/gnn_node_update_example_graph.png)
+
+Figure 6: Visualization of the graph and the submodules involved in the node update for node n<sub>3</sub>.
 
 </details>
 
