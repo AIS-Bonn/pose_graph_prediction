@@ -142,9 +142,81 @@ The same is done with the edge features using a different MLP.
 We noticed that the GNN is performing better with encoded features.  
 After predicting the node features of the next time step an MLP is used on the node features to decode them back into the euclidean space.  
 
+The variants mostly differ in the way the data is presented to the GNN.  
+Starting from the initial prototype, the input is adapted step by step to a homogeneous GNN - described above - that is compared to a heterogeneous GNN.  
+The heterogeneous GNN differs by allowing to specify a type for each edge and node.  
+Depending on the edge type a different set of MLPs is used and trained during the edge update.  
+Edges of the same type use the same MLPs.  
+The target node type defines the MLP used in the node update equivalently.  
 
+__Model 1 - The Initial Prototype__
 
-TODO: Describe model variants
+For the initial prototype each node feature vector consisted of the normalized 3D position of the corresponding joint and the specific node id, normalized to a range from -1.0 to 1.0.  
+Each edge feature consisted of the difference between the normalized target and source joint positions.  
+
+node_features<sub>j</sub> = [normalized(j), position<sub>j,t</sub>]  
+edge_features<sub>i,j</sub> = [position<sub>j,t</sub> - position<sub>i,t-1</sub>]
+
+The reasoning behind this is that the node feature encoder gets the option to encode the node positions depending on the node id.  
+The edge feature encoder could transform the features into an equivalent latent space.  
+The edge update gets the information about the connected nodes' ids, their positions and already their difference in the latent space.  
+The node update gets the information about the node's id, its position and how the edges affect the node. 
+And the decoder just serves to transform from the latent to euclidean space. 
+
+__Model 2 - The Corrected Prototype__
+
+The corrected prototype differs to the initial prototype in the joint id within the node features.  
+Here, the joint id is encoded as a one hot vector.
+
+node_features<sub>j</sub> = [one_hot_encoded(j), position<sub>j,t</sub>]  
+edge_features<sub>i,j</sub> = [position<sub>j,t</sub> - position<sub>i,t-1</sub>]
+
+The reasoning is the same as for the initial prototype. 
+
+__Model 3 - The One Hot Encoded Edge Model__
+
+For this model, the joint ids are encoded in the edge features.  
+The combination of source and target node ids is encoded in a one hot vector.  
+Each node feature consists of the corresponding joints' normalized 3D position from time step t and t-1.  
+
+node_features<sub>j</sub> = [position<sub>j,t-1</sub>, position<sub>j,t</sub>]  
+edge_features<sub>i,j</sub> = [one_hot_encoded(i, j)]
+
+The reasoning behind it is to separate the features by their domain.  
+The node features are in the euclidean space and get encoded by the node feature encoder independently of their id.  
+The edge encoder only gets the ids and could potentially steer the edge update depending on the ids.  
+The node update on the other hand has to rely on the information from the updated edges, because it gets no information about the target node id from the encoded node features.  
+
+A potential downside of this model is the combinatorial explosion of the joint id combinations encoded in the edges. 
+
+__Model 4 - The No Initial Edge Features Model__
+
+This model is similar to model 2.  
+The difference is that the initial edge features are omitted and the node features are extended by the previous position of the corresponding joint.  
+Therefore, the node features consist of the one hot encoded node id, the previous and the current position of the joint.  
+
+node_features<sub>j</sub> = [one_hot_encoded(j), position<sub>j,t-1</sub>, position<sub>j,t</sub>]  
+edge_features<sub>i,j</sub> = []
+
+The reasoning here is that the model should easily be capable of computing the edge features of model 2 by itself in the edge update - if this would be of use.  
+The input to the edge update still consists of the encoded ids and all positions of the source and target node. 
+The potential upside to model 3 would be that the target node id is encoded in the node features.
+
+__Model 5 - The Heterogeneous GNN Model__
+
+This model is most closely comparable to model 3 and 4. 
+Like in model three, the initial edge features are empty.  
+Like in model four, the node features consist of the previous and current positions of the corresponding joint.  
+The node ids define the node types.  
+Similar to model three each node id combination defines an edge type. 
+
+node_features<sub>j</sub> = [position<sub>j,t-1</sub>, position<sub>j,t</sub>]  
+edge_features<sub>i,j</sub> = []
+
+This way, each joint combination is processed by an own set of MLPs during the edge update.  
+The MLPs have the same size but unique sets of weights.  
+Similarly, each target node type gets an own MLP for the node update.  
+Encoder and decoder are not affected by the types.  
 
 </details>
 
