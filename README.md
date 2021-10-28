@@ -237,11 +237,43 @@ Adam is utilized as the optimizer with a learning rate of 0.001.
 
 
 <details>
+<summary><b>Evaluation</b></summary>
+
+__Evaluation Procedure__
+
+For evaluation the training set of the Human3.6M data set is used.  
+It consists of seven subjects (humans) performing the same set of actions.  
+
+The evaluation procedure:  
+- For each subject s<sub>t</sub> used for testing:
+  - For each other subject s<sub>v</sub> used for validation with v != t:
+    - For 50 epochs:
+      - Train model variant on remaining subjects' data
+      - Compute loss on withheld validation data from subject s<sub>v</sub>
+      - Save model m<sub>best_on_v</sub> with best loss on validation data
+    - Compute loss l<sub>best</sub> of m<sub>best_on_v</sub> on test data
+  - Calculate mean x̄<sub>t</sub> of all l<sub>best</sub> for current test subject s<sub>t</sub>
+- Calculate mean of all x̄<sub>t</sub> to get the final score for the model variant
+
+In other words train, validate and test on all possible combinations of the sequences and average the losses to get the score.
+
+__Results__
+
+| Model | Score (lower is better) |
+|-------|------|
+1 - The Initial Prototype | 0.000405
+2 - The Corrected Prototype | 0.000542
+3 - The One Hot Encoded Edge Model | __0.000280__
+4 - The No Initial Edge Features Model | __0.000281__
+5 - The Heterogeneous GNN Model | 0.000548
+
+</details>
+
+
+<details>
 <summary><b>Intermediate Results</b></summary>
 
 TODO: insert gifs for qualitative results 
-
-TODO: describe evaluation and evaluated model variants - insert schematic image per variant 
 
 TODO: add links to branches containing the variants
 
