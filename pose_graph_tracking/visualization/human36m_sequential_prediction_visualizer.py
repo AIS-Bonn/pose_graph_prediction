@@ -1,4 +1,4 @@
-from pose_graph_tracking.data.augmenting_human36m_graph_in_memory_dataset_generator import AugmentingHuman36MDataset
+from pose_graph_tracking.data.human36m_graph_in_memory_dataset_generator import Human36MDataset
 
 from pose_graph_tracking.helpers.defaults import PATH_TO_CONFIG_DIRECTORY, PATH_TO_DATA_DIRECTORY, PATH_TO_MODEL
 from pose_graph_tracking.helpers.utils import get_model, load_model_weights, load_config_file, \
@@ -15,8 +15,8 @@ if __name__ == "__main__":
     model = get_model(model_config)
     load_model_weights(model, PATH_TO_MODEL)
 
-    visualization_data = AugmentingHuman36MDataset(data_save_directory=PATH_TO_DATA_DIRECTORY + "Human36M/visualization_data",
-                                                   ids_of_subjects_to_load=[9])
+    visualization_data = Human36MDataset(data_save_directory=PATH_TO_DATA_DIRECTORY + "Human36M/visualization_data",
+                                         ids_of_subjects_to_load=[11])
 
     visualizer = SequentialPredictionVisualizer()
     visualizer.visualize_model(model,
