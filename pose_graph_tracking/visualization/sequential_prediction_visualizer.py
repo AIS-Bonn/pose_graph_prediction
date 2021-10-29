@@ -73,8 +73,8 @@ class SequentialPredictionVisualizer(object):
 
             # Visualize poses
             sequential_visualizer.provide_pose_with_uniform_color(denormalized_current_pose, [124, 124, 0])
-            sequential_visualizer.provide_pose_with_uniform_color(denormalized_predicted_next_pose, [200, 0, 0])
-            sequential_visualizer.provide_pose_with_uniform_color(denormalized_next_gt_pose, [0, 200, 0])
+            sequential_visualizer.provide_pose_with_uniform_color(denormalized_predicted_next_pose, [13, 166, 17])
+            sequential_visualizer.provide_pose_with_uniform_color(denormalized_next_gt_pose, [0, 0, 200])
             sequential_visualizer.draw_provided_poses()
 
             print(visualized_frames_counter)
