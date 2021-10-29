@@ -34,8 +34,8 @@ class Human36MDataLoader(object):
     def __init__(self,
                  path_to_data_root_directory: str,
                  ids_of_subjects_to_load: Union[List[int], None] = None,
-                 specifically_requested_action_label: Union[str, None] = None,
-                 frames_to_skip_at_sequence_start: int = 0):
+                 specifically_requested_action_label: Union[str, None] = "Pose",
+                 frames_to_skip_at_sequence_start: int = 100):
         # List the loaded sequences are stored in
         self.sequences = []
 

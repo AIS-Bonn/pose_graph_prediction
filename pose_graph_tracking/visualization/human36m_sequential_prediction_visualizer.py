@@ -16,8 +16,9 @@ if __name__ == "__main__":
     load_model_weights(model, PATH_TO_BEST_TEST_MODEL)
 
     visualization_data = Human36MDataset(data_save_directory=PATH_TO_DATA_DIRECTORY + "Human36M/visualization_data",
-                                         ids_of_subjects_to_load=[11])
+                                         ids_of_subjects_to_load=[9])
 
     visualizer = SequentialPredictionVisualizer()
     visualizer.visualize_model(model,
-                               visualization_data)
+                               visualization_data,
+                               use_output_as_next_input=True)

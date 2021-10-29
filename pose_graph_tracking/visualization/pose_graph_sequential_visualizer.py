@@ -98,7 +98,6 @@ class PoseGraphSequentialVisualizer(StoppableSequentialVisualizer):
                 self.plot3d.add_line(line)
 
         self._set_plots_axes_limits()
-        self._plot_xy_origin()
 
     def _create_line(self,
                      start_point: Tuple[float, float, float],

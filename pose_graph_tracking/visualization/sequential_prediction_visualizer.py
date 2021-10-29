@@ -1,3 +1,5 @@
+from numpy import copy
+
 from time import time
 
 from torch import long as torchlong, zeros
@@ -31,10 +33,12 @@ class SequentialPredictionVisualizer(object):
         sequential_visualizer = PoseGraphSequentialVisualizer(start_paused=True)
         sequential_visualizer.set_default_link_colors(COCO_COLORS)
         sequential_visualizer.set_graph_connections(CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH)
-        sequential_visualizer.set_axes_limits([-1000, -1000, -1000], [1000, 1000, 1000])
+        sequential_visualizer.set_axes_limits([-2000, -2000, 0], [2000, 2000, 2000])
 
         normalizer = PoseSequenceNormalizer()
         visualized_frames_counter = 0
+        first_pose_in_seed = None
+        second_pose_in_seed = None
         previous_pose = None
         current_pose = None
         model.eval()
@@ -71,10 +75,15 @@ class SequentialPredictionVisualizer(object):
             denormalized_predicted_next_pose = normalizer.denormalize_pose(predicted_next_pose)
             denormalized_next_gt_pose = normalizer.denormalize_pose(next_gt_pose)
 
+            if first_pose_in_seed is None:
+                first_pose_in_seed = gt_data["previous_pose"].numpy()
+                second_pose_in_seed = copy(denormalized_current_pose)
+
             # Visualize poses
-            sequential_visualizer.provide_pose_with_uniform_color(denormalized_current_pose, [124, 124, 0])
+            if use_output_as_next_input:
+                sequential_visualizer.provide_pose_with_uniform_color(first_pose_in_seed, [164, 171, 164])
+                sequential_visualizer.provide_pose_with_uniform_color(second_pose_in_seed, [118, 122, 118])
             sequential_visualizer.provide_pose_with_uniform_color(denormalized_predicted_next_pose, [13, 166, 17])
-            sequential_visualizer.provide_pose_with_uniform_color(denormalized_next_gt_pose, [0, 0, 200])
             sequential_visualizer.draw_provided_poses()
 
             print(visualized_frames_counter)
