@@ -257,7 +257,8 @@ The evaluation procedure:
 
 In other words train, validate and test on all possible combinations of the sequences and average the losses to get the score.
 
-__Results__
+__Quantitative Results__
+
 
 | Model | Score (lower is better) | Link to Commit |
 |-------|------|---|
@@ -266,6 +267,31 @@ __Results__
 3 - The One Hot Encoded Edge Model | __0.000280__ | 5a6b53814d029b8150e7f9da2b482caf48673174
 4 - The No Initial Edge Features Model | __0.000281__ | 7c338801102fb9b3597398dfc77d29ad6fdf739b
 5 - The Heterogeneous GNN Model | 0.000548 | 8a0f108931a2751aa1366ecb0ccd0e440f5e8fe8
+
+__Qualitative Results__
+
+After the quantitative evaluation, the two best model variants - 3 and 4 - were trained for 2000 epochs.  
+The data was split into a test set - consisting of subjects 9 and 11 - and a training set using data from the remaining subjects.  
+This split is commonly used in the literature for training on the publicly available part of the Human3.6M data set.  
+
+Model 4 achieved a lower loss of 0.000344 on the test set compared to model 3 with a loss of 0.000350.  
+Model 4 was picked as the currently best model variant.  
+It was trained further for a total of 8000 epochs, achieving its best loss of 0.000340.
+
+The larger loss after training compared to the one of the evaluation results from the used data split.  
+During evaluation all model variants achieved their largest loss on data of subject 9.  
+This data contributes more to the loss of the test set during training, than to the overall mean loss during the evaluation.  
+The following table shows an example of the mean losses per validation set generated during the evaluation of model 4.  
+
+| Subject ID | Mean Loss on Validation Set |
+|---|---|
+1  | 0.000187
+5  | 0.000288
+6  | 0.000257
+7  | 0.000273
+8  | 0.000157
+9  | 0.000582
+11 | 0.000222
 
 </details>
 
