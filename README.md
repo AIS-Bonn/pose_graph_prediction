@@ -293,16 +293,14 @@ The following table shows an example of the mean losses per validation set gener
 9  | 0.000582
 11 | 0.000222
 
-</details>
+These [videos](https://drive.google.com/drive/folders/1Q9_9vGsIXRlS56VyWFc4pedRydc4iJ2g?usp=sharing) visualize the results of the initial prototype and best model.  
+Frame by frame predictions get the estimated poses and compute only the next pose visualized in green. 
+The ground truth is visualized in blue.  
+Sequential predictions use the output pose of the model as the next input pose.  
+The estimated seed poses are visualized in grey while the predictions are visualized in green.  
+The model was not trained to use its own output as an input.  
 
-
-<details>
-<summary><b>Intermediate Results</b></summary>
-
-TODO: insert gifs for qualitative results 
-
-TODO: add links to branches containing the variants
-
+The approximate inference time for one pose are three to five milliseconds on an Intel i7-8550U Laptop CPU.  
 
 </details>
 
