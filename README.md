@@ -259,13 +259,13 @@ In other words train, validate and test on all possible combinations of the sequ
 
 __Results__
 
-| Model | Score (lower is better) |
-|-------|------|
-1 - The Initial Prototype | 0.000405
-2 - The Corrected Prototype | 0.000542
-3 - The One Hot Encoded Edge Model | __0.000280__
-4 - The No Initial Edge Features Model | __0.000281__
-5 - The Heterogeneous GNN Model | 0.000548
+| Model | Score (lower is better) | Link to Commit |
+|-------|------|---|
+1 - The Initial Prototype | 0.000405 | 306ed84d1e3cd673c2c8803e224d98ee99701ee9
+2 - The Corrected Prototype | 0.000542 | b5c4c542212a92b5aa1a9ae1cc4246da6e98d270
+3 - The One Hot Encoded Edge Model | __0.000280__ | 5a6b53814d029b8150e7f9da2b482caf48673174
+4 - The No Initial Edge Features Model | __0.000281__ | 7c338801102fb9b3597398dfc77d29ad6fdf739b
+5 - The Heterogeneous GNN Model | 0.000548 | 8a0f108931a2751aa1366ecb0ccd0e440f5e8fe8
 
 </details>
 
