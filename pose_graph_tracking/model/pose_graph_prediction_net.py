@@ -23,11 +23,6 @@ class PoseGraphPredictionNet(Module):
 
         # Default parameters
         self.dropout_probability = 0.5
-        self.edge_encoder_parameters = {"activation_type": "relu",
-                                        "number_of_input_channels": 5,
-                                        "number_of_hidden_channels": 50,
-                                        "number_of_output_channels": 20,
-                                        "number_of_hidden_layers": 3}
         self.node_encoder_parameters = {"activation_type": "relu",
                                         "number_of_input_channels": 4,
                                         "number_of_hidden_channels": 50,
@@ -42,12 +37,6 @@ class PoseGraphPredictionNet(Module):
 
         # Encoders for edge- and node features
         dropout_prob_encoders = 0.0
-        self.edge_features_encoder = generate_encoder(self.edge_encoder_parameters["number_of_input_channels"],
-                                                      self.edge_encoder_parameters["number_of_hidden_channels"],
-                                                      self.edge_encoder_parameters["number_of_output_channels"],
-                                                      self.edge_encoder_parameters["activation_type"],
-                                                      dropout_prob_encoders,
-                                                      self.edge_encoder_parameters["number_of_hidden_layers"])
         self.node_features_encoder = generate_encoder(self.node_encoder_parameters["number_of_input_channels"],
                                                       self.node_encoder_parameters["number_of_hidden_channels"],
                                                       self.node_encoder_parameters["number_of_output_channels"],
@@ -70,7 +59,6 @@ class PoseGraphPredictionNet(Module):
     def _get_parameters_from_config(self,
                                     model_config: dict):
         self.dropout_probability = model_config.get("dropout_probability", self.dropout_probability)
-        self._get_mlp_parameters(self.edge_encoder_parameters, model_config["edge_encoder_parameters"])
         self._get_mlp_parameters(self.node_encoder_parameters, model_config["node_encoder_parameters"])
         self._get_mlp_parameters(self.node_decoder_parameters, model_config["node_decoder_parameters"])
 
@@ -101,12 +89,11 @@ class PoseGraphPredictionNet(Module):
         :param data: Input data.
         :return: Predicted joint positions.
         """
-        encoded_features_of_edges = self.edge_features_encoder(data.features_of_edges)
         encoded_features_of_nodes = self.node_features_encoder(data.x)
 
         residuals_of_node_features, _, _ = self.pose_graph_prediction_layer.forward(encoded_features_of_nodes,
                                                                                     data.node_indexes_connected_by_edges,
-                                                                                    encoded_features_of_edges,
+                                                                                    features_of_edges=None,
                                                                                     global_features=None,
                                                                                     batch_ids=data.batch)
 

@@ -45,7 +45,6 @@ class PoseGraphPredictionLayer(Module):
 
         use_attention = model_config["use_attention"]
 
-        number_of_features_per_edge = model_config["edge_encoder_parameters"]["number_of_output_channels"]
         number_of_features_per_node = model_config["node_encoder_parameters"]["number_of_output_channels"]
         number_of_global_features = model_config["pose_graph_prediction_layer_parameters"]["number_of_global_features"]
 
@@ -78,7 +77,6 @@ class PoseGraphPredictionLayer(Module):
                     mlp_name = "attention_" + mlp_name
 
                 number_of_input_channels = number_of_features_per_node * 2 + \
-                                           number_of_features_per_edge + \
                                            number_of_global_features
                 number_of_hidden_channels = edge_mlp_parameters["number_of_hidden_channels"]
                 number_of_output_channels = edge_mlp_parameters["number_of_output_channels"]
@@ -106,9 +104,9 @@ class PoseGraphPredictionLayer(Module):
             def forward(self,
                         features_of_source_nodes: torch.Tensor,
                         features_of_target_nodes: torch.Tensor,
-                        features_of_edges: torch.Tensor,
-                        global_features: torch.Tensor,
-                        batch_ids: torch.Tensor) -> torch.Tensor:
+                        features_of_edges: Union[torch.Tensor, None],
+                        global_features: Union[torch.Tensor, None],
+                        batch_ids: Union[torch.Tensor, None]) -> torch.Tensor:
                 """
                 For each edge, concatenates the features of the edge's source node, the features of the target node, the
                 own features of that edge and the global features of its graph.
@@ -131,12 +129,6 @@ class PoseGraphPredictionLayer(Module):
                  .. ]
                 with size (number_of_edges_in_current_batch x number_of_features_per_node).
 
-                features_of_edges:
-                [[feature_0_of_edge_0, feature_1_of_edge_0, ..],
-                 [feature_0_of_edge_1, feature_1_of_edge_1, ..],
-                 .. ]
-                with size (number_of_edges_in_current_batch x number_of_features_per_edge).
-
                 global_features:
                 [[global_feature_0_of_graph_0, global_feature_1_of_graph_0, ..],
                  [global_feature_0_of_graph_0, global_feature_1_of_graph_0, ..],
@@ -156,17 +148,16 @@ class PoseGraphPredictionLayer(Module):
                 :param batch_ids: Tensor of ids encoding which node belongs to which graph.
                 :return: Updated features of edges.
                 """
-                if global_features is None:
-                    edge_neighborhoods = torch.cat([features_of_source_nodes,
-                                                    features_of_target_nodes,
-                                                    features_of_edges], 1)
-                    resulting_edges = self.edge_mlp(edge_neighborhoods)
-                else:
-                    edge_neighborhoods = torch.cat([features_of_source_nodes,
-                                                    features_of_target_nodes,
-                                                    features_of_edges,
-                                                    global_features[batch_ids]], 1)
-                    resulting_edges = self.edge_mlp(edge_neighborhoods)
+                features_to_concatenate = [features_of_source_nodes, features_of_target_nodes]
+
+                if features_of_edges is not None:
+                    features_to_concatenate.append(features_of_edges)
+
+                if global_features is not None:
+                    features_to_concatenate.append(global_features[batch_ids])
+
+                edge_neighborhoods = torch.cat(features_to_concatenate, 1)
+                resulting_edges = self.edge_mlp(edge_neighborhoods)
 
                 if use_attention:
                     attentions_per_edge = self.edge_attention_mlp(edge_neighborhoods)
@@ -209,8 +200,8 @@ class PoseGraphPredictionLayer(Module):
                         features_of_nodes: torch.Tensor,
                         node_ids_for_edges: torch.Tensor,
                         features_of_edges: torch.Tensor,
-                        global_features: torch.Tensor,
-                        batch_ids: torch.Tensor) -> torch.Tensor:
+                        global_features: Union[torch.Tensor, None],
+                        batch_ids: Union[torch.Tensor, None]) -> torch.Tensor:
                 """
                 For each node, sums up the features of all edges pointing to that node.
                 Concatenates the resulting feature vector with the features of the node itself and the global features
@@ -238,7 +229,7 @@ class PoseGraphPredictionLayer(Module):
                 [[feature_0_of_edge_0, feature_1_of_edge_0, ..],
                  [feature_0_of_edge_1, feature_1_of_edge_1, ..],
                  .. ]
-                with size (number_of_edges_in_current_batch x number_of_features_per_edge).
+                with size (number_of_edges_in_current_batch x number_of_features_per_edge after EdgeModel).
 
                 global_features:
                 [[global_feature_0_of_graph_0, global_feature_1_of_graph_0, ..],
@@ -283,7 +274,7 @@ class PoseGraphPredictionLayer(Module):
     def forward(self,
                 features_of_nodes: torch.Tensor,
                 node_ids_for_edges: torch.Tensor,
-                features_of_edges: torch.Tensor,
+                features_of_edges: Union[torch.Tensor, None] = None,
                 global_features: Union[torch.Tensor, None] = None,
                 batch_ids: Union[torch.Tensor, None] = None) -> Union[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
