@@ -277,4 +277,65 @@ TODO: insert gifs for qualitative results
 
 TODO: add links to branches containing the variants
 
+
+</details>
+
+
+<details>
+<summary><b>Installation</b></summary>
+
+#### Create virtual environment  
+
+`virtualenv --python=python3.6 ./pose_graph_env`
+  
+#### Activate virtual environment by default  
+
+Add this - or adapted line - to .bashrc and deactivate other virtual environments being activated by default  
+
+`source /path_to_env/pose_graph_env/bin/activate`
+
+Then source the bashrc to activate the virtual environment 
+
+`source ~/.bashrc`
+
+#### Clone repo 
+
+`cd /path_to_env/pose_graph_env/`  
+`git clone https://git.ais.uni-bonn.de/pose-graph-tracking/pose-graph-tracking.git`
+  
+#### Install requirements
+
+`cd pose-graph-tracking`  
+`pip install -r requirements.txt`
+  
+#### Install this package locally
+
+`python -m pip install -e .`
+  
+#### Install pytorch geometric
+
+Pytorch geometric refused to be installed properly using the requirements.txt.  
+In any case, install the correct version for your cuda and torch setup.  
+The official [install guide](https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html#installation-via-pip-wheels) describes how.  
+E.g. for torch version 1.7.0 and CUDA version 10.2, which were used while developing this package:
+
+```
+pip install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.7.0+cu102.html
+pip install torch-sparse -f https://pytorch-geometric.com/whl/torch-1.7.0+cu102.html
+pip install torch-cluster -f https://pytorch-geometric.com/whl/torch-1.7.0+cu102.html
+pip install torch-spline-conv -f https://pytorch-geometric.com/whl/torch-1.7.0+cu102.html
+pip install torch-geometric
+```
+  
+#### Download data from sciebo 
+
+```
+mkdir data
+cd data 
+wget --no-check-certificate --content-disposition "https://uni-bonn.sciebo.de/s/zOx3LNDhoxMzOsj/download"
+tar -xf original.tar.gz
+mkdir original
+mv k* original/
+```
+
 </details>
