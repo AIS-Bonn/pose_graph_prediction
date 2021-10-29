@@ -57,7 +57,7 @@ class SequentialPredictionVisualizer(object):
             print("Time needed for Model Execution: ", model_processing_time)
 
             # Get relevant poses
-            current_pose = data["x"].numpy()[:, 1:]
+            current_pose = data["x"].numpy()[:, -3:]
             predicted_next_pose = predicted_next_pose.detach().numpy()
             next_gt_pose = data["ground_truth"].numpy()
 
