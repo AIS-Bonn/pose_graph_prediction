@@ -4,7 +4,7 @@ import numpy as np
 
 from numpy.linalg import inv as invert_matrix
 
-from pose_graph_tracking.data.utils import get_angle_2d, get_angle_3d, get_rotation_matrix_around_z_axis
+from pose_graph_prediction.data.utils import get_angle_2d, get_angle_3d, get_rotation_matrix_around_z_axis
 
 from typing import List, Tuple, Union
 

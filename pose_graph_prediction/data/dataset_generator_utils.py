@@ -1,6 +1,6 @@
 from numpy import array, ndarray
 
-from pose_graph_tracking.data.normalization import PoseSequenceNormalizer
+from pose_graph_prediction.data.normalization import PoseSequenceNormalizer
 
 import torch
 

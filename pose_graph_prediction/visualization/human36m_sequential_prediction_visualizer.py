@@ -1,10 +1,11 @@
-from pose_graph_tracking.data.human36m_graph_in_memory_dataset_generator import Human36MDataset
+from pose_graph_prediction.data.human36m_graph_in_memory_dataset_generator import Human36MDataset
 
-from pose_graph_tracking.helpers.defaults import PATH_TO_BEST_TEST_MODEL, PATH_TO_CONFIG_DIRECTORY, PATH_TO_DATA_DIRECTORY
-from pose_graph_tracking.helpers.utils import get_model, load_model_weights, load_config_file, \
+from pose_graph_prediction.helpers.defaults import PATH_TO_BEST_TEST_MODEL, PATH_TO_CONFIG_DIRECTORY, \
+    PATH_TO_DATA_DIRECTORY
+from pose_graph_prediction.helpers.utils import get_model, load_model_weights, load_config_file, \
     make_deterministic_as_possible
 
-from pose_graph_tracking.visualization.sequential_prediction_visualizer import SequentialPredictionVisualizer
+from pose_graph_prediction.visualization.sequential_prediction_visualizer import SequentialPredictionVisualizer
 
 
 if __name__ == "__main__":
@@ -20,4 +21,5 @@ if __name__ == "__main__":
 
     visualizer = SequentialPredictionVisualizer()
     visualizer.visualize_model(model,
-                               visualization_data)
+                               visualization_data,
+                               use_output_as_next_input=False)

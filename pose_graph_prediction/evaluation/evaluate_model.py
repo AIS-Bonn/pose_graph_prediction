@@ -2,15 +2,15 @@ from json import dump as save_json_file
 
 from numpy import mean
 
-from pose_graph_tracking.data.augmenting_human36m_graph_in_memory_dataset_generator import \
+from pose_graph_prediction.data.augmenting_human36m_graph_in_memory_dataset_generator import \
     AugmentingHuman36MDataset, Human36MDataset
 
-from pose_graph_tracking.helpers.defaults import PATH_TO_DATA_DIRECTORY, PATH_TO_CONFIG_DIRECTORY, PATH_TO_MODEL, MODEL_DIRECTORY, MODEL_NAME_PREFIX
-from pose_graph_tracking.helpers.utils import get_model, load_model_weights, make_deterministic_as_possible, load_config_file
+from pose_graph_prediction.helpers.defaults import PATH_TO_DATA_DIRECTORY, PATH_TO_CONFIG_DIRECTORY, PATH_TO_MODEL, MODEL_DIRECTORY, MODEL_NAME_PREFIX
+from pose_graph_prediction.helpers.utils import get_model, load_model_weights, make_deterministic_as_possible, load_config_file
 
-from pose_graph_tracking.training.trainer import Trainer
+from pose_graph_prediction.training.trainer import Trainer
 
-from pose_graph_tracking.evaluation.validator import Validator
+from pose_graph_prediction.evaluation.validator import Validator
 
 from shutil import rmtree
 

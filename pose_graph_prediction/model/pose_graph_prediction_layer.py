@@ -1,4 +1,4 @@
-from pose_graph_tracking.model.utils import get_activation_function_from_type
+from pose_graph_prediction.model.utils import get_activation_function_from_type
 
 import torch
 

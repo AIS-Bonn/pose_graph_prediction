@@ -1,10 +1,10 @@
 from numpy import array, copy
 
-from pose_graph_tracking.data.dataset_generator_utils import convert_poses_to_graph_data
-from pose_graph_tracking.data.human36m_graph_in_memory_dataset_generator import Human36MDataLoader, Human36MDataset
+from pose_graph_prediction.data.dataset_generator_utils import convert_poses_to_graph_data
+from pose_graph_prediction.data.human36m_graph_in_memory_dataset_generator import Human36MDataLoader, Human36MDataset
 
-from pose_graph_tracking.helpers.defaults import PATH_TO_DATA_DIRECTORY
-from pose_graph_tracking.helpers.human36m_definitions import CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
+from pose_graph_prediction.helpers.defaults import PATH_TO_DATA_DIRECTORY
+from pose_graph_prediction.helpers.human36m_definitions import CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
 import torch
 

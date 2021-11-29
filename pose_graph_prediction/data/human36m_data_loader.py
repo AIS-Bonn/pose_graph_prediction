@@ -2,7 +2,7 @@ from json import load as load_json_file
 
 from os.path import exists, join
 
-from pose_graph_tracking.data.conversions import convert_estimated_pose_sequence_to_gt_format, \
+from pose_graph_prediction.data.conversions import convert_estimated_pose_sequence_to_gt_format, \
     convert_action_label_to_action_id
 
 from typing import List, Tuple, Union

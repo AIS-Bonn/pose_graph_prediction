@@ -16,8 +16,8 @@ from torch.optim import Adam
 from torch_geometric.data import Data, DataListLoader, DataLoader, Dataset
 from torch_geometric.nn import DataParallel
 
-from pose_graph_tracking.helpers.utils import deterministic_init_function
-from pose_graph_tracking.helpers.defaults import MODEL_DIRECTORY, MODEL_NAME_PREFIX
+from pose_graph_prediction.helpers.utils import deterministic_init_function
+from pose_graph_prediction.helpers.defaults import MODEL_DIRECTORY, MODEL_NAME_PREFIX
 
 from typing import Callable, List, Union
 

@@ -6,14 +6,14 @@ import numpy as np
 
 from os.path import exists
 
-from pose_graph_tracking.data.conversions import convert_estimated_pose_sequence_to_gt_format
-from pose_graph_tracking.data.normalization import PoseSequenceNormalizer
+from pose_graph_prediction.data.conversions import convert_estimated_pose_sequence_to_gt_format
+from pose_graph_prediction.data.normalization import PoseSequenceNormalizer
 
-from pose_graph_tracking.helpers.defaults import PACKAGE_ROOT_PATH
-from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, \
+from pose_graph_prediction.helpers.defaults import PACKAGE_ROOT_PATH
+from pose_graph_prediction.helpers.human36m_definitions import COCO_COLORS, \
     CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
-from pose_graph_tracking.visualization.pose_graph_sequential_visualizer import PoseGraphSequentialVisualizer
+from pose_graph_prediction.visualization.pose_graph_sequential_visualizer import PoseGraphSequentialVisualizer
 
 from typing import Any, List, Tuple
 

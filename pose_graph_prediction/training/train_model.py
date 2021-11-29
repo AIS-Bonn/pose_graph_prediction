@@ -1,10 +1,11 @@
-from pose_graph_tracking.data.augmenting_human36m_graph_in_memory_dataset_generator import \
+from pose_graph_prediction.data.augmenting_human36m_graph_in_memory_dataset_generator import \
     AugmentingHuman36MDataset, Human36MDataset
 
-from pose_graph_tracking.helpers.defaults import PATH_TO_DATA_DIRECTORY, PATH_TO_CONFIG_DIRECTORY, PATH_TO_MODEL
-from pose_graph_tracking.helpers.utils import get_model, load_model_weights, make_deterministic_as_possible, load_config_file
+from pose_graph_prediction.helpers.defaults import PATH_TO_DATA_DIRECTORY, PATH_TO_CONFIG_DIRECTORY, PATH_TO_MODEL
+from pose_graph_prediction.helpers.utils import get_model, load_config_file, load_model_weights, \
+    make_deterministic_as_possible
 
-from pose_graph_tracking.training.trainer import Trainer
+from pose_graph_prediction.training.trainer import Trainer
 
 
 path_to_training_hyperparameter_config = PATH_TO_CONFIG_DIRECTORY + "training_hyperparameter_config.json"

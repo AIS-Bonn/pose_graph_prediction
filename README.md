@@ -1,6 +1,6 @@
-# Pose Graph Tracking
+# Pose Graph Prediction
 
-The purpose of this package is to track humans represented by pose graphs.  
+The purpose of this package is to predict humans represented by pose graphs.  
 In its current state, it predicts the next pose of a human given the current and the previous pose.  
 This procedure can be applied sequentially to predict the poses following the next pose.  
 
@@ -325,11 +325,11 @@ Then source the bashrc to activate the virtual environment
 #### Clone repo 
 
 `cd /path_to_env/pose_graph_env/`  
-`git clone https://git.ais.uni-bonn.de/pose-graph-tracking/pose-graph-tracking.git`
+`git clone https://git.ais.uni-bonn.de/pose-graph-prediction/pose-graph-prediction.git`
   
 #### Install requirements
 
-`cd pose-graph-tracking`  
+`cd pose-graph-prediction`  
 `pip install -r requirements.txt`
   
 #### Install this package locally

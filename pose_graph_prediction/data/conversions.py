@@ -1,4 +1,4 @@
-from pose_graph_tracking.helpers.human36m_definitions import JOINT_MAPPING_FROM_GT_TO_ESTIMATION, ACTION_IDS_DICT
+from pose_graph_prediction.helpers.human36m_definitions import JOINT_MAPPING_FROM_GT_TO_ESTIMATION, ACTION_IDS_DICT
 
 from typing import List, Tuple
 

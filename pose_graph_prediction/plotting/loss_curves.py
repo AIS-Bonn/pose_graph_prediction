@@ -4,7 +4,7 @@ import numpy as np
 
 import pickle
 
-from pose_graph_tracking.helpers.defaults import MODEL_DIRECTORY
+from pose_graph_prediction.helpers.defaults import MODEL_DIRECTORY
 
 
 # Open results file and put contents into results list

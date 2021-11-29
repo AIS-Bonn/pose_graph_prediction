@@ -9,7 +9,7 @@ import torch
 
 import numpy as np
 
-from pose_graph_tracking.model.pose_graph_prediction_net import PoseGraphPredictionNet
+from pose_graph_prediction.model.pose_graph_prediction_net import PoseGraphPredictionNet
 
 from typing import Any
 

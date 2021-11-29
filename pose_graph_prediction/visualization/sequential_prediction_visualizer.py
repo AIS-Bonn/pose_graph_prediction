@@ -4,15 +4,15 @@ from torch import long as torchlong, zeros
 
 from torch_geometric.data import DataLoader, Dataset
 
-from pose_graph_tracking.data.normalization import PoseSequenceNormalizer
-from pose_graph_tracking.data.dataset_generator_utils import convert_poses_to_graph_data
+from pose_graph_prediction.data.normalization import PoseSequenceNormalizer
+from pose_graph_prediction.data.dataset_generator_utils import convert_poses_to_graph_data
 
-from pose_graph_tracking.helpers.human36m_definitions import COCO_COLORS, \
+from pose_graph_prediction.helpers.human36m_definitions import COCO_COLORS, \
     CONNECTED_JOINTS_PAIRS_FOR_HUMAN36M_GROUND_TRUTH
 
-from pose_graph_tracking.model.pose_graph_prediction_net import PoseGraphPredictionNet
+from pose_graph_prediction.model.pose_graph_prediction_net import PoseGraphPredictionNet
 
-from pose_graph_tracking.visualization.pose_graph_sequential_visualizer import PoseGraphSequentialVisualizer
+from pose_graph_prediction.visualization.pose_graph_sequential_visualizer import PoseGraphSequentialVisualizer
 
 
 class SequentialPredictionVisualizer(object):

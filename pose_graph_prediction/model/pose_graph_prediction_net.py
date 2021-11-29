@@ -4,8 +4,8 @@ from torch.nn import Module
 
 from torch_geometric.data import Data
 
-from pose_graph_tracking.model.pose_graph_prediction_layer import PoseGraphPredictionLayer
-from pose_graph_tracking.model.utils import generate_encoder, generate_decoder
+from pose_graph_prediction.model.pose_graph_prediction_layer import PoseGraphPredictionLayer
+from pose_graph_prediction.model.utils import generate_encoder, generate_decoder
 
 
 class PoseGraphPredictionNet(Module):
