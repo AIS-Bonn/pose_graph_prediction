@@ -360,6 +360,8 @@ pip install torch-cluster -f https://pytorch-geometric.com/whl/torch-1.7.0+cu102
 pip install torch-spline-conv -f https://pytorch-geometric.com/whl/torch-1.7.0+cu102.html
 pip install torch-geometric
 ```
+
+Tested also with torch version 1.10.0 and torch-geometric version 2.0.2. 
   
 #### Download data from sciebo 
 
