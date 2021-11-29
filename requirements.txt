@@ -1,4 +1,3 @@
-hiplot==0.1.9.post2
 matplotlib~=3.3.2
 numpy==1.19.2
 setuptools~=41.6.0
