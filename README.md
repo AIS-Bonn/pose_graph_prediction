@@ -82,16 +82,15 @@ E.g. while walking, the right hand does not only move with respect to the right 
 
 A GNN can only modify the node and edge features of one graph.  
 Thus, the first thing to do is to construct one graph from the sequence of poses.  
-For that every joint becomes one a node n<sub>i</sub> in the graph.  
-To incorporate the assumption, every node n<sub>i</sub> from the previous pose at time step t-1 is connected to every node n<sub>j</sub> from the current pose at time step t via a directed edge e<sub>i,j</sub> (Fig. 4).  
+For that every joint becomes one a node in the graph.  
+Every node n<sub>i</sub> from the previous pose at time step t-1 is connected to every node n<sub>j</sub> from the current pose at time step t via a directed edge e<sub>i,j</sub> (Fig. 4).  
 
 ![Conversion of the pose sequence to one graph for the GNN](./docs/readme/pose_sequence_to_graph_data_conversion.png)
 
 Figure 4: A simplified example graph with only two joints per pose.
 
 Every node and every edge can have an associated feature vector - e.g. joint position as node feature.  
-The GNN updates all edge features, but only features of nodes with incoming edges.  
-It's task will be to update the node positions from time step t to generate a prediction for time step t+1. 
+The GNN's task will be to update the node positions from time step t to generate a prediction for time step t+1. 
 
 ---
 
@@ -100,10 +99,12 @@ It's task will be to update the node positions from time step t to generate a pr
 The GNN updates the edge features first.  
 Each edge is updated in the same way using the same set of MLPs.  
 For every edge e<sub>i,j</sub>:
-- Concatenate the features of the connected nodes n<sub>i</sub> & n<sub>j</sub> - e.g. positions - and the features of the edge - e.g. distance between nodes
+- Concatenate the features of the connected nodes n<sub>i</sub> and n<sub>j</sub> - e.g. positions - and the features of the edge - e.g. distance between nodes
 - Use an MLP to estimate the effect *eff<sub>i,j</sub>* of the source node n<sub>i</sub> onto the target node n<sub>j</sub> 
 - Use an MLP to estimate the extent of the effect *ext<sub>i,j</sub>* of the source node n<sub>i</sub> onto the target node n<sub>j</sub> 
-- Multiply the effect and the extent to get the updated edge feature ẽ<sub>i,j</sub> (Fig. 5)
+- Multiply the effect and the extent to get the updated edge feature ẽ<sub>i,j</sub>
+
+Example of the update process on edge e<sub>1,3</sub>:  
 
 ![Exemplary graph for the edge update of a GNN](./docs/readme/gnn_edge_update_example_graph.png)
 ![Edge update of a GNN](./docs/readme/gnn_edge_update.png) 
@@ -115,6 +116,7 @@ Figure 5: Visualization of the graph and the submodules involved in the edge upd
 #### Node Update
 
 After updating all edge features the node features are updated in a similar fashion.  
+Only nodes with incoming edges get updated.  
 The main difference is that there can be a varying number of incoming edges to each node.  
 This is addressed by an aggregation function combining the features of all incoming edges per node.  
 Again, every node is updated in the same way using the same MLP.  
@@ -123,7 +125,9 @@ For every node n<sub>j</sub> from time step t:
 - Sum up the updated feature vectors of every incoming edge - representing how other joints affect this joint
 - Concatenate the summed feature vector with the feature vector of the node itself
 - Use an MLP to estimate how the node should be updated
-- Add the result to the node state from time step t to get the predicted state (Fig. 6)
+- Add the result to the node state from time step t to get the predicted state
+
+Example of the update process on node n<sub>3</sub>:
 
 ![Exemplary graph for the node update of a GNN](./docs/readme/gnn_node_update.png)
 ![Node update of a GNN](./docs/readme/gnn_node_update_example_graph.png)
@@ -160,12 +164,12 @@ edge_features<sub>i,j</sub> = [position<sub>j,t</sub> - position<sub>i,t-1</sub>
 The reasoning behind this is that the node feature encoder gets the option to encode the node positions depending on the node id.  
 The edge feature encoder could transform the features into an equivalent latent space.  
 The edge update gets the information about the connected nodes' ids, their positions and already their difference in the latent space.  
-The node update gets the information about the node's id, its position and how the edges affect the node. 
-And the decoder just serves to transform from the latent to euclidean space. 
+The node update gets the information about the node's id, its position and how the edges affect the node.  
+Finally, the decoder's task is to transform from the latent to euclidean space. 
 
 __Model 2 - The Corrected Prototype__
 
-The corrected prototype differs to the initial prototype in the joint id within the node features.  
+The corrected prototype differs to the initial prototype in the way the joint id is represented within the node features.  
 Here, the joint id is encoded as a one hot vector.
 
 node_features<sub>j</sub> = [one_hot_encoded(j), position<sub>j,t</sub>]  
@@ -177,7 +181,7 @@ __Model 3 - The One Hot Encoded Edge Model__
 
 For this model, the joint ids are encoded in the edge features.  
 The combination of source and target node ids is encoded in a one hot vector.  
-Each node feature consists of the corresponding joints' normalized 3D position from time step t and t-1.  
+Each node feature consists of the corresponding joints' normalized 3D positions from time step t and t-1.  
 
 node_features<sub>j</sub> = [position<sub>j,t-1</sub>, position<sub>j,t</sub>]  
 edge_features<sub>i,j</sub> = [one_hot_encoded(i, j)]
@@ -199,14 +203,14 @@ node_features<sub>j</sub> = [one_hot_encoded(j), position<sub>j,t-1</sub>, posit
 edge_features<sub>i,j</sub> = []
 
 The reasoning here is that the model should easily be capable of computing the edge features of model 2 by itself in the edge update - if this would be of use.  
-The input to the edge update still consists of the encoded ids and all positions of the source and target node. 
+The input to the edge update still consists of the encoded ids and all positions of the source and target node.  
 The potential upside to model 3 would be that the target node id is encoded in the node features.
 
 __Model 5 - The Heterogeneous GNN Model__
 
-This model is most closely comparable to model 3 and 4. 
-Like in model three, the initial edge features are empty.  
-Like in model four, the node features consist of the previous and current positions of the corresponding joint.  
+This model is most closely comparable to model 3 and 4.  
+Like in model 3, the initial edge features are empty.  
+Like in model 4, the node features consist of the previous and current positions of the corresponding joint.  
 The node ids define the node types.  
 Similar to model three each node id combination defines an edge type. 
 
@@ -218,6 +222,9 @@ The MLPs have the same size but unique sets of weights.
 Similarly, each target node type gets an own MLP for the node update.  
 Encoder and decoder are not affected by the types.  
 
+The training and evaluation procedure are described in the following.  
+The evaluation section contains the results of the models' comparison.  
+
 </details>
 
 
@@ -228,7 +235,7 @@ The models are trained on the Human3.6M data set.
 3D Poses are estimated on the image data.  
 Noise is applied to the training data to prevent overfitting and increase the robustness of the model.  
 The noise is added to the joint positions.  
-The amount of noise is sampled randomly from a uniform distribution between -n and n, with n being 5% of the link length the joint is connected by.  
+The amount of noise is sampled randomly from a uniform distribution between -_n_ and _n_, with _n_ being 5% of the link length the joint is connected by.  
 The noisy estimated poses serve as the input to the model.  
 The Mean Squared Error (MSE) between the normalized predicted joint positions and the normalized ground truth is used as the loss.  
 Adam is utilized as the optimizer with a learning rate of 0.001.
@@ -241,17 +248,19 @@ Adam is utilized as the optimizer with a learning rate of 0.001.
 
 __Evaluation Procedure__
 
-For evaluation the training set of the Human3.6M data set is used.  
+The training set of the Human3.6M data set is used for the evaluation.  
 It consists of seven subjects (humans) performing the same set of actions.  
 
-The evaluation procedure:  
+Leave-one-out cross-validation is utilized to evaluate the models.
+
+In detail, the evaluation procedure performs the following steps:  
 - For each subject s<sub>t</sub> used for testing:
   - For each other subject s<sub>v</sub> used for validation with v != t:
     - For 50 epochs:
       - Train model variant on remaining subjects' data
       - Compute loss on withheld validation data from subject s<sub>v</sub>
       - Save model m<sub>best_on_v</sub> with best loss on validation data
-    - Compute loss l<sub>best</sub> of m<sub>best_on_v</sub> on test data
+    - Compute loss l<sub>best</sub> of m<sub>best_on_v</sub> on test data from subject s<sub>t</sub>
   - Calculate mean x̄<sub>t</sub> of all l<sub>best</sub> for current test subject s<sub>t</sub>
 - Calculate mean of all x̄<sub>t</sub> to get the final score for the model variant
 
@@ -278,7 +287,7 @@ Model 4 achieved a lower loss of 0.000344 on the test set compared to model 3 wi
 Model 4 was picked as the currently best model variant.  
 It was trained further for a total of 8000 epochs, achieving its best loss of 0.000340.
 
-The larger loss after training compared to the one of the evaluation results from the used data split.  
+The larger loss after training - compared to the one of the evaluation - results from the used data split.  
 During evaluation all model variants achieved their largest loss on data of subject 9.  
 This data contributes more to the loss of the test set during training, than to the overall mean loss during the evaluation.  
 The following table shows an example of the mean losses per validation set generated during the evaluation of model 4.  
@@ -294,7 +303,7 @@ The following table shows an example of the mean losses per validation set gener
 11 | 0.000222
 
 These [videos](https://drive.google.com/drive/folders/1Q9_9vGsIXRlS56VyWFc4pedRydc4iJ2g?usp=sharing) visualize the results of the initial prototype and best model.  
-Frame by frame predictions get the estimated poses and compute only the next pose visualized in green. 
+Frame by frame predictions use the estimated poses as the input and compute only the next pose visualized in green.  
 The ground truth is visualized in blue.  
 Sequential predictions use the output pose of the model as the next input pose.  
 The estimated seed poses are visualized in grey while the predictions are visualized in green.  
