@@ -256,6 +256,7 @@ Leave-one-out cross-validation is utilized to evaluate the models.
 In detail, the evaluation procedure performs the following steps:  
 - For each subject s<sub>t</sub> used for testing:
   - For each other subject s<sub>v</sub> used for validation with v != t:
+    - Initialize model weights randomly using [He initialization](https://openaccess.thecvf.com/content_iccv_2015/papers/He_Delving_Deep_into_ICCV_2015_paper.pdf)
     - For 50 epochs:
       - Train model variant on remaining subjects' data
       - Compute loss on withheld validation data from subject s<sub>v</sub>
